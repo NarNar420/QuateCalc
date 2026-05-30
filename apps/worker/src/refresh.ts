@@ -11,9 +11,9 @@
  */
 import { RegionSchema, type ScrapeRegion } from "@quatecalc/contracts";
 import { getAdapter } from "@quatecalc/scraper-core";
-import { registerAceAdapter } from "@quatecalc/scraper-adapters";
+import { registerAllAdapters } from "@quatecalc/scraper-adapters";
 import { runScrape } from "@quatecalc/scraper-core";
-import { buildFixtureContext, buildLiveContext } from "./context.js";
+import { buildLiveContext, fixtureContextBuilder } from "./context.js";
 
 interface Args {
   supplier: string;
@@ -41,7 +41,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
 
   // Register available adapters.
-  registerAceAdapter();
+  registerAllAdapters();
 
   const adapter = getAdapter(args.supplier);
   if (!adapter) {
@@ -49,7 +49,7 @@ async function main() {
     process.exit(1);
   }
 
-  const buildContext = args.live ? buildLiveContext : buildFixtureContext;
+  const buildContext = args.live ? buildLiveContext : fixtureContextBuilder(args.supplier);
   console.log(
     `Refreshing "${adapter.supplierKey}" region=${args.region} mode=${args.live ? "LIVE" : "FIXTURES"}...`,
   );

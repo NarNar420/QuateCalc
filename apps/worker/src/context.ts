@@ -40,32 +40,55 @@ export function buildLiveContext(region: ScrapeRegion): ScraperContext {
   return { fetchText, region, log: makeLog() };
 }
 
+/** Per-supplier fixture wiring: fixtures dir + URL-path -> filename map. */
+const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, string> }> = {
+  ace: {
+    dir: "packages/scraper-adapters/src/ace/__fixtures__",
+    map: {
+      "/categories": "categories.html",
+      "/categories/building-materials": "products-page1.html",
+      "/categories/building-materials?page=2": "products-page2.html",
+    },
+  },
+  tambour: {
+    dir: "packages/scraper-adapters/src/tambour/__fixtures__",
+    map: {
+      "/shop/": "shop.html",
+      "/product-category/paints/": "products-page1.html",
+      "/product-category/paints/page/2/": "products-page2.html",
+    },
+  },
+};
+
+function repoRoot(): string {
+  // apps/worker/src -> apps/worker -> apps -> repo root
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+}
+
 /**
- * FIXTURE context: serves saved HTML from the ACE adapter's __fixtures__ dir,
- * mapping request URLs by path. Lets the full scrape->normalize->DB pipeline
- * run offline (sandbox / CI / dev) without hitting the network.
+ * Build a FIXTURE context factory for a given supplier: serves saved HTML by
+ * URL path so the full scrape->normalize->DB pipeline runs offline (sandbox /
+ * CI / dev) without hitting the network or a supplier's anti-bot protection.
  */
-export function buildFixtureContext(region: ScrapeRegion): ScraperContext {
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  // apps/worker/src -> repo root -> the adapter fixtures
-  const fixturesDir = path.resolve(
-    here,
-    "../../../packages/scraper-adapters/src/ace/__fixtures__",
-  );
+export function fixtureContextBuilder(
+  supplierKey: string,
+): (region: ScrapeRegion) => ScraperContext {
+  const cfg = FIXTURE_SUPPLIERS[supplierKey];
+  if (!cfg) {
+    throw new Error(
+      `No fixtures registered for supplier "${supplierKey}". Use --live or add fixtures.`,
+    );
+  }
+  const fixturesDir = path.join(repoRoot(), cfg.dir);
 
-  const map: Record<string, string> = {
-    "/categories": "categories.html",
-    "/categories/building-materials": "products-page1.html",
-    "/categories/building-materials?page=2": "products-page2.html",
+  return (region: ScrapeRegion): ScraperContext => {
+    const fetchText = async (url: string): Promise<string> => {
+      const u = new URL(url);
+      const key = u.search ? `${u.pathname}${u.search}` : u.pathname;
+      const file = cfg.map[key];
+      if (!file) return ""; // unknown path => empty page => category ends cleanly
+      return readFile(path.join(fixturesDir, file), "utf8");
+    };
+    return { fetchText, region, log: makeLog() };
   };
-
-  const fetchText = async (url: string): Promise<string> => {
-    const u = new URL(url);
-    const key = u.search ? `${u.pathname}${u.search}` : u.pathname;
-    const file = map[key];
-    if (!file) return ""; // unknown path => empty page => category ends cleanly
-    return readFile(path.join(fixturesDir, file), "utf8");
-  };
-
-  return { fetchText, region, log: makeLog() };
 }
