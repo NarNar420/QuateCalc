@@ -139,9 +139,11 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 ### [2026-05-30] ACE sitemap crawler — capped depth  (agent: claude-code/opus)
 - **Task:** reach ACE products beyond a category's page 1 (robots blocks `?p=`) via the sitemap, compliantly.
 - **Paths:** `packages/scraper-adapters/src/ace/{sitemap,sitemapAdapter}.ts` (+ tests + fixtures); `apps/worker/src/refresh.ts` (`--sitemap`, `--max-products`).
-- **Public API:** `createAceSitemapAdapter({ maxProducts })`, `parseSitemapLocs`, `isProductUrl`, `parseProductJsonLd`; worker `--sitemap --max-products N` (auto-enables `--browser`).
-- **Approach:** sitemap index → child sitemaps → numeric product URLs → browser-render each → parse `Product` JSON-LD (`offers.price`). Reuses the runner + health gate; promotes under supplierKey `ace`.
-- **Tests:** scraper-adapters +8 (sitemap parsers + capped adapter, offline against trimmed real fixtures).
-- **Volume / cost:** one child sitemap alone lists ~8,444 products (≈ tens of thousands total); product price is JS-injected so each needs a browser render. So a run is bounded by `--max-products` for politeness; an UNCAPPED full-catalog crawl is a multi-hour batch, not an interactive run.
-- **Commit:** _(this commit)_.
-- **Status:** ✅ done (capped depth). ⚠️ full-catalog batch + scheduling pending.
+- **Public API:** `createAceSitemapAdapter({ maxProducts })`, `parseSitemapLocs`, `isLeafCategoryUrl`; worker `--sitemap --max-products N` (auto-enables `--browser`).
+- **Recon correction:** the sitemap's numeric-ending URLs (`/.../slug/102040102`) are **leaf-category listing pages, not products** — only bare `/1701065` URLs carry a `Product` JSON-LD (those pages have only a BreadcrumbList). First implementation (per-product JSON-LD) yielded 0 live. **Refactored:** discover leaf-category URLs from the sitemap → scrape each as a Magento **listing** via the shared `parseProducts` (prices render live). Doubles as real category discovery (supersedes the seeded single category).
+- **Approach:** sitemap index → child sitemaps → leaf-category URLs (capped `MAX_LEAF_CATEGORIES=40`) → browser-render each listing → `parseProducts` → yield until `maxProducts`. Reuses runner + health gate; promotes under supplierKey `ace`.
+- **Tests:** scraper-adapters sitemap suite (parseSitemapLocs, isLeafCategoryUrl, capped adapter) offline against trimmed real fixtures (`sitemap-index.xml`, `sitemap-child.xml`, real `category-listing.html`).
+- **Verified (LIVE, local):** `refresh --live --sitemap --max-products 5` → discovered 40 leaf categories, scraped **5 real priced products, nullPriceRate 0, status=success, promoted=true**.
+- **Volume / cost:** one child sitemap lists ~8,444 leaf URLs (≈ tens of thousands total). Each listing is a browser render. Bounded by `--max-products`; an uncapped full crawl is a multi-hour batch.
+- **Commit:** `af19303` (refactor); `56b1f44`/`6f3e926` (initial + review fixes).
+- **Status:** ✅ done (capped depth, live-proven; also provides category discovery). ⚠️ full-catalog batch + scheduling pending.
