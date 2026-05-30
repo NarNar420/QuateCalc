@@ -12,8 +12,8 @@
  * --proxy URL: route the browser through a proxy (IP rotation / geo).
  * --category <key|substring>: limit scraping to categories whose key matches exactly
  *   or whose label/URL contains the substring.
- * --sitemap: use the sitemap-driven ACE adapter (implies --browser; Product JSON-LD
- *   is JS-injected and requires a browser-rendered fetch).
+ * --sitemap: use the sitemap-driven ACE adapter (implies --browser; listing prices
+ *   are Knockout-rendered and require a browser-rendered fetch).
  * --max-products N: cap the number of products crawled in sitemap mode (default: 50).
  *
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
@@ -65,7 +65,7 @@ async function main() {
 
   if (args.sitemap && !args.browser) {
     args.browser = true;
-    console.log("--sitemap requires browser rendering (Product JSON-LD is JS-injected); enabling --browser.");
+    console.log("--sitemap requires browser rendering (listing prices are Knockout-rendered); enabling --browser.");
   }
 
   if (args.sitemap && args.supplier !== "ace") {
@@ -95,11 +95,8 @@ async function main() {
     const { createBrowserTransport } = await import("@quatecalc/scraper-browser");
     const bt = createBrowserTransport({
       proxy: args.proxy,
-      // In sitemap mode we fetch individual product pages (JSON-LD is JS-injected;
-      // domcontentloaded + a short settle is enough).  In category mode we wait for
-      // the Magento listing grid to paint before reading prices.
-      waitForSelector: args.sitemap ? undefined : ".priceNum, .product-item-info",
-      challengeWaitMs: args.sitemap ? 1500 : 6000,
+      waitForSelector: ".priceNum, .product-item-info",
+      challengeWaitMs: 6000,
     });
     closeTransport = bt.close;
     buildContext = liveContextBuilder({ transport: bt.fetchText });

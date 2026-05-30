@@ -4,23 +4,26 @@ import type {
   ScraperAdapter,
   ScraperContext,
 } from "@quatecalc/contracts";
-import { isProductUrl, parseProductJsonLd, parseSitemapLocs } from "./sitemap.js";
+import { parseProducts } from "./parse.js";
+import { isLeafCategoryUrl, parseSitemapLocs } from "./sitemap.js";
 
 const BASE_URL = "https://www.ace.co.il";
 const SITEMAP_URL = `${BASE_URL}/sitemap.xml`;
+/** Cap on how many leaf-category URLs we collect before scraping (bounds sitemap fetches). */
+const MAX_LEAF_CATEGORIES = 40;
 
 export interface AceSitemapOptions {
-  /** Hard cap on products crawled (politeness; full catalog = tens of thousands). */
+  /** Hard cap on products yielded (politeness; the full catalog is tens of thousands). */
   maxProducts?: number;
 }
 
 /**
- * A sitemap-driven ACE adapter: discovers product URLs from the sitemap index
- * (bypassing the robots-blocked ?p= category pagination) and reads each product's
- * price from its schema.org Product JSON-LD. The JSON-LD is JS-injected, so this
- * adapter MUST run with the browser transport. Promotes into the ACE catalog
- * (supplierKey "ace") through the normal runner + health gate. Capped via
- * maxProducts; an uncapped run is a long batch.
+ * Sitemap-driven ACE adapter: discovers leaf-category listing URLs from the
+ * sitemap index (bypassing the robots-blocked ?p= pagination of any single
+ * category) and scrapes each as a Magento listing via the shared `parseProducts`.
+ * Reaches products across many categories. MUST run with the browser transport
+ * (listing prices are Knockout-rendered). Promotes into the ACE catalog
+ * (supplierKey "ace") through the runner + health gate. Capped via maxProducts.
  */
 export function createAceSitemapAdapter(opts: AceSitemapOptions = {}): ScraperAdapter {
   const maxProducts = opts.maxProducts ?? 50;
@@ -35,12 +38,12 @@ export function createAceSitemapAdapter(opts: AceSitemapOptions = {}): ScraperAd
     },
 
     async *scrapeCategory(category: CategoryRef, ctx: ScraperContext): AsyncIterable<RawProduct> {
-      // 1. index -> child sitemaps -> product URLs (stop once we have enough).
+      // 1. index -> child sitemaps -> leaf-category URLs (bounded).
       const indexXml = await ctx.fetchText(category.url);
       const childSitemaps = parseSitemapLocs(indexXml);
-      const productUrls: string[] = [];
+      const leafCategories: string[] = [];
       for (const sm of childSitemaps) {
-        if (productUrls.length >= maxProducts) break;
+        if (leafCategories.length >= MAX_LEAF_CATEGORIES) break;
         let xml: string;
         try {
           xml = await ctx.fetchText(sm);
@@ -49,24 +52,29 @@ export function createAceSitemapAdapter(opts: AceSitemapOptions = {}): ScraperAd
           continue;
         }
         for (const u of parseSitemapLocs(xml)) {
-          if (isProductUrl(u)) productUrls.push(u);
-          if (productUrls.length >= maxProducts) break;
+          if (isLeafCategoryUrl(u)) leafCategories.push(u);
+          if (leafCategories.length >= MAX_LEAF_CATEGORIES) break;
         }
       }
-      ctx.log("info", `ace-sitemap: ${productUrls.length} product URLs to fetch`);
+      ctx.log("info", `ace-sitemap: ${leafCategories.length} leaf categories discovered`);
 
-      // 2. fetch each product page (browser-rendered) and parse its JSON-LD.
-      for (const url of productUrls) {
+      // 2. scrape each leaf category as a listing until we hit maxProducts.
+      let yielded = 0;
+      for (const catUrl of leafCategories) {
+        if (yielded >= maxProducts) break;
         let html: string;
         try {
-          html = await ctx.fetchText(url);
+          html = await ctx.fetchText(catUrl);
         } catch (err) {
-          ctx.log("warn", `product fetch failed: ${url} (${String(err)})`);
+          ctx.log("warn", `category fetch failed: ${catUrl} (${String(err)})`);
           continue;
         }
-        const product = parseProductJsonLd(html, url);
-        if (product) yield { ...product, region: ctx.region };
-        else ctx.log("warn", `no Product JSON-LD: ${url}`);
+        const products = parseProducts(html, { baseUrl: BASE_URL, categoryPath: [catUrl] });
+        for (const p of products) {
+          if (yielded >= maxProducts) break;
+          yield { ...p, region: ctx.region };
+          yielded++;
+        }
       }
     },
   };
