@@ -7,6 +7,7 @@ import {
   createPageCache,
   createRateLimiter,
   createRobotsChecker,
+  type Transport,
 } from "@quatecalc/scraper-core";
 
 const USER_AGENT =
@@ -22,22 +23,28 @@ function makeLog(): ScraperContext["log"] {
 }
 
 /**
- * LIVE context: polite, rate-limited, robots-respecting, cached fetch against
- * the real supplier site. Use only where the supplier's ToS permits.
+ * LIVE context factory: polite, rate-limited, robots-respecting, cached fetch
+ * against a real supplier site. The `transport` decides HOW pages are fetched —
+ * plain HTTP by default, or a real browser (Playwright) for JS/anti-bot sites.
+ * robots.txt is always fetched over plain HTTP (it's static text). Use only
+ * where the supplier's ToS permits.
  */
-export function buildLiveContext(region: ScrapeRegion): ScraperContext {
-  const rateLimiter = createRateLimiter();
-  const cache = createPageCache();
-  const fetchTextRaw = (url: string) => fetch(url).then((r) => r.text());
-  const robots = createRobotsChecker(fetchTextRaw, USER_AGENT);
-  const fetchText = createFetchText({
-    userAgent: USER_AGENT,
-    rateLimiter,
-    robots,
-    cache,
-    respectRobots: process.env.SCRAPER_RESPECT_ROBOTS !== "false",
-  });
-  return { fetchText, region, log: makeLog() };
+export function liveContextBuilder(opts: { transport?: Transport } = {}) {
+  return (region: ScrapeRegion): ScraperContext => {
+    const rateLimiter = createRateLimiter();
+    const cache = createPageCache();
+    const fetchTextRaw = (url: string) => fetch(url).then((r) => r.text());
+    const robots = createRobotsChecker(fetchTextRaw, USER_AGENT);
+    const fetchText = createFetchText({
+      userAgent: USER_AGENT,
+      rateLimiter,
+      robots,
+      cache,
+      respectRobots: process.env.SCRAPER_RESPECT_ROBOTS !== "false",
+      transport: opts.transport,
+    });
+    return { fetchText, region, log: makeLog() };
+  };
 }
 
 /** Per-supplier fixture wiring: fixtures dir + URL-path -> filename map. */

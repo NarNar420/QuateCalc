@@ -1,24 +1,29 @@
 /**
- * Catalog refresh job — the MVP's automated price-acquisition entry point.
+ * Catalog refresh job — the automated price-acquisition entry point.
  *
  * Usage:
- *   pnpm --filter @quatecalc/worker refresh -- [--supplier ace] [--region center] [--fixtures] [--live]
+ *   pnpm --filter @quatecalc/worker refresh -- [--supplier ace] [--region center] [--fixtures|--live] [--browser] [--proxy URL]
  *
  * --fixtures (default in non-production): scrape saved HTML offline.
- * --live: hit the real supplier site (rate-limited, robots-respecting).
+ * --live: hit the real supplier site over plain HTTP (rate-limited, robots-respecting).
+ * --live --browser: fetch via a real Chromium (Playwright) — executes JS and
+ *   passes most anti-bot challenges (e.g. Cloudflare). Requires the browser
+ *   binary: `pnpm --filter @quatecalc/scraper-browser install-browser`.
+ * --proxy URL: route the browser through a proxy (IP rotation / geo).
  *
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
  */
-import { RegionSchema, type ScrapeRegion } from "@quatecalc/contracts";
-import { getAdapter } from "@quatecalc/scraper-core";
+import { RegionSchema, type ScraperContext, type ScrapeRegion } from "@quatecalc/contracts";
+import { getAdapter, runScrape } from "@quatecalc/scraper-core";
 import { registerAllAdapters } from "@quatecalc/scraper-adapters";
-import { runScrape } from "@quatecalc/scraper-core";
-import { buildLiveContext, fixtureContextBuilder } from "./context.js";
+import { fixtureContextBuilder, liveContextBuilder } from "./context.js";
 
 interface Args {
   supplier: string;
   region: ScrapeRegion;
   live: boolean;
+  browser: boolean;
+  proxy?: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -26,6 +31,8 @@ function parseArgs(argv: string[]): Args {
   let region = "center";
   // default to fixtures unless --live is passed or NODE_ENV=production
   let live = process.env.NODE_ENV === "production";
+  let browser = false;
+  let proxy: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -33,14 +40,15 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--region") region = argv[++i] ?? region;
     else if (a === "--live") live = true;
     else if (a === "--fixtures") live = false;
+    else if (a === "--browser") browser = true;
+    else if (a === "--proxy") proxy = argv[++i];
   }
-  return { supplier, region: RegionSchema.parse(region), live };
+  return { supplier, region: RegionSchema.parse(region), live, browser, proxy };
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
-  // Register available adapters.
   registerAllAdapters();
 
   const adapter = getAdapter(args.supplier);
@@ -49,25 +57,54 @@ async function main() {
     process.exit(1);
   }
 
-  const buildContext = args.live ? buildLiveContext : fixtureContextBuilder(args.supplier);
-  console.log(
-    `Refreshing "${adapter.supplierKey}" region=${args.region} mode=${args.live ? "LIVE" : "FIXTURES"}...`,
-  );
+  // Choose the fetch context: fixtures (offline) | live HTTP | live browser.
+  let buildContext: (region: ScrapeRegion) => ScraperContext;
+  let closeTransport: (() => Promise<void>) | undefined;
+  let mode: string;
 
-  const result = await runScrape(adapter, args.region, { buildContext });
-
-  console.log("\n=== Scrape result ===");
-  console.log(JSON.stringify(result, null, 2));
-
-  if (result.status === "failed") {
-    console.error(`\nRun FAILED (${result.notes ?? "unknown"}). Catalog left unchanged.`);
-    process.exit(2);
+  if (!args.live) {
+    buildContext = fixtureContextBuilder(args.supplier);
+    mode = "FIXTURES";
+  } else if (args.browser) {
+    // Dynamic import so Playwright is only loaded when actually scraping live.
+    const { createBrowserTransport } = await import("@quatecalc/scraper-browser");
+    const bt = createBrowserTransport({
+      proxy: args.proxy,
+      // Wait for the WooCommerce/listing grid (or category tiles) to render.
+      waitForSelector: "ul.products, ul.product-categories, li.product",
+      challengeWaitMs: 1500,
+    });
+    closeTransport = bt.close;
+    buildContext = liveContextBuilder({ transport: bt.fetchText });
+    mode = "LIVE+BROWSER";
+  } else {
+    buildContext = liveContextBuilder();
+    mode = "LIVE(http)";
   }
-  console.log(`\nDone: ${result.status}, ${result.productCount} products, promoted=${result.promoted}.`);
+
+  console.log(`Refreshing "${adapter.supplierKey}" region=${args.region} mode=${mode}...`);
+
+  try {
+    const result = await runScrape(adapter, args.region, { buildContext });
+
+    console.log("\n=== Scrape result ===");
+    console.log(JSON.stringify(result, null, 2));
+
+    if (result.status === "failed") {
+      console.error(`\nRun FAILED (${result.notes ?? "unknown"}). Catalog left unchanged.`);
+      process.exitCode = 2;
+      return;
+    }
+    console.log(
+      `\nDone: ${result.status}, ${result.productCount} products, promoted=${result.promoted}.`,
+    );
+  } finally {
+    await closeTransport?.();
+  }
 }
 
 main()
-  .then(() => process.exit(0))
+  .then(() => process.exit(process.exitCode ?? 0))
   .catch((err) => {
     console.error(err);
     process.exit(1);

@@ -17,8 +17,10 @@ packages/
   matching/         התאמת טקסט חופשי -> מוצר בקטלוג (pg_trgm + token overlap)
   pricing/          חישוב טהור: סכומים, הוצאות, רווח, מע"מ
   export/           ייצוא Excel (RTL) + CSV (BOM)
-  scraper-core/     framework לסריקה: registry, rate-limit, robots, cache, runner
-  scraper-adapters/ אדפטר לכל ספק (ACE) + fixtures
+  scraper-core/     framework לסריקה: registry, rate-limit, robots, cache, runner,
+                    ושכבת transport ניתנת להחלפה (HTTP / דפדפן / API חיצוני)
+  scraper-adapters/ אדפטר לכל ספק (ACE, טמבור) + fixtures
+  scraper-browser/  transport מבוסס Playwright (Chromium אמיתי) לאתרים עם אנטי-בוט
 apps/
   web/              Next.js 15 — אשף 4 שלבים (RTL עברית) + API
   worker/           job לרענון קטלוג (runner + adapter); מצב fixtures/live
@@ -71,6 +73,31 @@ pnpm -r test          # unit + integration
 - **מע"מ:** ברירת מחדל 18% (ישראל, 2026), ניתן לשינוי לכל הצעה.
 - **תחום:** בנייה/שיפוצים. ספקים: **ACE** ו-**טמבור** (Tambour, WooCommerce).
   הרחבה לספק נוסף = `adapter` חדש בלבד (selectors + parse + fixtures + tests).
-- **סריקה חיה:** מצב `--live` מוכן, אך אתרים כמו טמבור מחזירים 403 (הגנת אנטי-בוט/
-  Cloudflare). סריקה חיה תדרוש Playwright/proxy והרשאה (שלב 3); עד אז עובדים מול
-  fixtures שממדלים את מבנה ה-HTML האמיתי (WooCommerce לטמבור).
+## סריקה חיה (live) — פתרון בעיית האנטי-בוט
+
+ל-`ScraperAdapter` לא אכפת **איך** מביאים את ה-HTML — הוא קורא ל-`ctx.fetchText`.
+לכן יש **שכבת transport ניתנת להחלפה** (ב-`scraper-core`), עם שלוש דרגות:
+
+| Transport | מתי | פקודה |
+|-----------|-----|-------|
+| **HTTP** (ברירת מחדל) | אתרים פתוחים, מהיר וזול | `refresh -- --live` |
+| **דפדפן (Playwright)** | אתרים עם JS/אנטי-בוט (Cloudflare) — Chromium אמיתי שמריץ JS ועובר אתגרים | `refresh -- --live --browser` |
+| **API חיצוני** (Bright Data/ScrapingBee) | אתרים עיקשים במיוחד | proxy: `--proxy <url>` |
+
+robots.txt, הגבלת קצב ו-cache חלים על **כל** ה-transports (עטיפה אחת מרכזית).
+
+הרצה חיה עם דפדפן:
+```bash
+pnpm --filter @quatecalc/scraper-browser install-browser   # מתקין Chromium (פעם אחת)
+pnpm --filter @quatecalc/worker refresh -- --live --browser --supplier tambour --region center
+```
+
+### מגבלות והערות חשובות
+- **טמבור מחזירה 403 ל-HTTP פשוט** (הגנת אנטי-בוט). מצב `--browser` נועד בדיוק לכך.
+- **סביבת הריצה הזו (Claude Code on the web) חוסמת egress לפי allowlist** — לכן סריקה
+  חיה של ספק חיצוני לא תרוץ מכאן, וגם הורדת ה-Chromium חסומה. יש להריץ **מקומית**
+  או בסביבה עם network policy שמתירה את שרתי הספק (ואת CDN של Playwright).
+- מול fixtures (שממדלים את מבנה ה-HTML האמיתי) הכל עובד offline, וקוד ה-transport
+  אומת מקצה-לקצה מול שרת HTTP מקומי (`fetcher.integration.test.ts`).
+- **חוקיות:** סריקה מאחורי הגנת בוט עלולה להפר תנאי שימוש. לשימוש מסחרי — לוודא
+  הרשאה/תנאי שימוש מול הספק, ועדיף feed/API רשמי כשקיים.

@@ -26,8 +26,10 @@ export {
 
 export {
   createFetchText,
+  httpTransport,
   RobotsDisallowedError,
   type FetcherDeps,
+  type Transport,
 } from "./fetcher.js";
 
 export {

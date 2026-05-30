@@ -81,7 +81,8 @@ Rules:
 | `packages/matching` | free-text → catalog SKU matching |
 | `packages/pricing` | totals / overhead / margin / VAT (pure) |
 | `packages/export` | Excel + CSV export |
-| `packages/scraper-core` | registry, rate-limit, robots, cache, runner |
+| `packages/scraper-core` | registry, rate-limit, robots, cache, runner, pluggable `Transport` |
 | `packages/scraper-adapters` | one folder per supplier (`ace/`, `tambour/`, …) |
+| `packages/scraper-browser` | Playwright (Chromium) `Transport` for JS/anti-bot sites |
 | `apps/web` | Next.js RTL Hebrew UI + API routes |
 | `apps/worker` | catalog refresh job (fixtures/live) |

@@ -89,3 +89,16 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Verified:** real Postgres — tambour scrape promoted 5 products (supplier-scoped, ACE untouched); cross-supplier match "סופרקריל לבן" → tambour ₪289; sale price ₪119.9 captured over struck-through ₪149.
 - **Blocker noted:** live scrape of tambour.co.il returns **HTTP 403 (anti-bot/Cloudflare)** — real live prices need Wave 3 (Playwright/proxy + ToS approval). Fixtures model the real HTML structure meanwhile.
 - **Commit:** `a09cf00`. **Status:** ✅ done (live data ⚠️ pending Wave 3).
+
+---
+
+## Wave 3 — Live scraping (anti-bot)
+
+### [2026-05-30] Wave 3 — pluggable transport + Playwright browser fetch  (agent: orchestrator/opus)
+- **Task:** solve live scraping behind anti-bot (Cloudflare 403) to enable broad cross-supplier price collection.
+- **Paths:** `packages/scraper-core` (fetcher refactor), new `packages/scraper-browser`, `apps/worker` (`--browser`/`--proxy`).
+- **Public API:** `Transport` type + `httpTransport` (scraper-core); `createBrowserTransport` + `stealthInitScript` (scraper-browser); `liveContextBuilder({ transport })` (worker). Adapters unchanged — transport is injected.
+- **Tests:** scraper-core 19 (incl. new real-HTTP integration: robots+cache+rate-limit over a local server); scraper-browser 3 (stealth/UA, offline).
+- **Verified:** full transport pipeline proven over real HTTP against a localhost server; browser transport is production code (lazy Chromium, stealth init, proxy support).
+- **Blocker noted:** this sandbox blocks external egress (allowlist) AND the Playwright browser CDN (403), so a real live scrape / browser download can't run here — must run locally or in an env whose network policy allows the supplier + Playwright CDN. Code is ready for that.
+- **Commit:** _(this commit)_. **Status:** ✅ done (machinery); ⚠️ real live run requires a permissive network env.

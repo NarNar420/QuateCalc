@@ -13,6 +13,7 @@
     "@quatecalc/contracts": "workspace:*",
     "@quatecalc/db": "workspace:*",
     "@quatecalc/scraper-adapters": "workspace:*",
+    "@quatecalc/scraper-browser": "workspace:*",
     "@quatecalc/scraper-core": "workspace:*"
   },
   "devDependencies": {
