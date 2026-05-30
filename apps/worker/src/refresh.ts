@@ -12,12 +12,15 @@
  * --proxy URL: route the browser through a proxy (IP rotation / geo).
  * --category <key|substring>: limit scraping to categories whose key matches exactly
  *   or whose label/URL contains the substring.
+ * --sitemap: use the sitemap-driven ACE adapter (implies --browser; Product JSON-LD
+ *   is JS-injected and requires a browser-rendered fetch).
+ * --max-products N: cap the number of products crawled in sitemap mode (default: 50).
  *
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
  */
 import { RegionSchema, type CategoryRef, type ScraperContext, type ScrapeRegion } from "@quatecalc/contracts";
 import { getAdapter, runScrape } from "@quatecalc/scraper-core";
-import { registerAllAdapters } from "@quatecalc/scraper-adapters";
+import { createAceSitemapAdapter, registerAllAdapters } from "@quatecalc/scraper-adapters";
 import { fixtureContextBuilder, liveContextBuilder } from "./context.js";
 
 interface Args {
@@ -27,6 +30,8 @@ interface Args {
   browser: boolean;
   proxy?: string;
   category?: string;
+  sitemap: boolean;
+  maxProducts?: number;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -37,6 +42,8 @@ function parseArgs(argv: string[]): Args {
   let browser = false;
   let proxy: string | undefined;
   let category: string | undefined;
+  let sitemap = false;
+  let maxProducts: number | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -47,16 +54,25 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--browser") browser = true;
     else if (a === "--proxy") proxy = argv[++i];
     else if (a === "--category") category = argv[++i];
+    else if (a === "--sitemap") sitemap = true;
+    else if (a === "--max-products") maxProducts = Number(argv[++i]);
   }
-  return { supplier, region: RegionSchema.parse(region), live, browser, proxy, category };
+  return { supplier, region: RegionSchema.parse(region), live, browser, proxy, category, sitemap, maxProducts };
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
+  if (args.sitemap && !args.browser) {
+    args.browser = true;
+    console.log("--sitemap requires browser rendering (Product JSON-LD is JS-injected); enabling --browser.");
+  }
+
   registerAllAdapters();
 
-  const adapter = getAdapter(args.supplier);
+  const adapter = args.sitemap
+    ? createAceSitemapAdapter({ maxProducts: args.maxProducts })
+    : getAdapter(args.supplier);
   if (!adapter) {
     console.error(`Unknown supplier "${args.supplier}". Did you register its adapter?`);
     process.exit(1);

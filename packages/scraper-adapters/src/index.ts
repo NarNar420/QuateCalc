@@ -10,6 +10,10 @@ export {
 } from "./ace/parse.js";
 export { ACE_SELECTORS } from "./ace/selectors.js";
 
+export { createAceSitemapAdapter } from "./ace/sitemapAdapter.js";
+export type { AceSitemapOptions } from "./ace/sitemapAdapter.js";
+export { parseSitemapLocs, isProductUrl, parseProductJsonLd } from "./ace/sitemap.js";
+
 export { tambourAdapter } from "./tambour/adapter.js";
 export { TAMBOUR_SELECTORS } from "./tambour/selectors.js";
 export type { TambourParseContext } from "./tambour/parse.js";
