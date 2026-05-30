@@ -1,6 +1,15 @@
-# Tambour Live Scrape (one category end-to-end) Implementation Plan
+# Live Scrape (one category end-to-end) Implementation Plan — ACE (pivoted from Tambour)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+> **PIVOT (2026-05-30, post-recon):** Tasks 1–3 done as written. Recon (Task 4) proved
+> **Tambour has no online prices** → pivoted to **ACE** (real priced Magento store).
+> Tasks 5–9 now target the **ACE** adapter (`packages/scraper-adapters/src/ace/*`), not
+> Tambour. Key ACE deltas (see `docs/superpowers/recon/2026-05-30-supplier-recon.md`):
+> Knockout-rendered → **browser transport required**; **page-1-only** (robots disallows
+> `/*?`, pagination is `?p=2`); category discovery returns the done-bar category
+> `/tools-paint-affixing`; current-price = `.priceNum`(+`.ag`) NOT inside `.old-price`;
+> protocol-relative product URLs; SKU = `data-sku` on `a.product-item-link`.
 
 **Goal:** Pull real prices from the live Tambour site for one product category, promote them to the catalog through the health gate, and prove the full match → quote → Excel pipeline on that real data.
 

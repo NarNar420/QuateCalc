@@ -1,7 +1,19 @@
-# Design — Tambour live scrape: one category end-to-end
+# Design — Live scrape: one category end-to-end (ACE, pivoted from Tambour)
+
+> **PIVOT (2026-05-30, post-recon):** Live recon proved **Tambour publishes no prices
+> online** — it is a brand/spec catalog, not a priced store (Cloudflare was never the
+> blocker). The price-acquisition done bar is impossible for Tambour. Recon confirmed
+> **ACE (`ace.co.il`) is a real priced Magento store** with no anti-bot. The supplier for
+> this spec is now **ACE**; the method (recon → selector fix → fixtures → live → verify)
+> is unchanged. Deltas: target the **ACE** adapter folder (not Tambour); ACE renders via
+> **Knockout.js so the browser transport is REQUIRED** (not just for anti-bot); scrape
+> **page 1 only** (ACE robots disallows `/*?`, and Magento pagination is `?p=2`); done-bar
+> category = `/tools-paint-affixing`. See `docs/superpowers/recon/2026-05-30-supplier-recon.md`
+> for exact selectors and the current-price rule. Sections below referring to "Tambour"
+> now apply to **ACE** unless about the abandoned Tambour finding.
 
 - **Date:** 2026-05-30
-- **Status:** approved (design); pending implementation plan
+- **Status:** approved (design); PIVOTED to ACE post-recon; implementation in progress
 - **Owner agent:** claude-code/opus
 - **Branch:** `chore/matching-vitest-env` (continue here; do not merge until done bar met)
 - **Revised:** 2026-05-30 — post-code-review: one-category scoping needs a real
