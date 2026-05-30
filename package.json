@@ -1,0 +1,32 @@
+{
+  "name": "quatecalc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "QuateCalc — automated price-quote platform for building/renovation contractors (Hebrew/RTL)",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @quatecalc/db generate",
+    "db:migrate": "pnpm --filter @quatecalc/db migrate",
+    "db:push": "pnpm --filter @quatecalc/db push",
+    "seed": "pnpm --filter @quatecalc/db seed",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "esbuild"]
+  }
+}

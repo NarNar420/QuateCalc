@@ -1,0 +1,160 @@
+// QuateCalc data model.
+// The catalog is populated AUTOMATICALLY by scrapers (see packages/scraper-*).
+// Staging->promote: a scrape run writes rows as `staged`; on a healthy run they
+// are promoted to `current` and the previous `current` rows are `archived`,
+// so a broken scrape never wipes a good catalog.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
+}
+
+enum Region {
+  north
+  haifa
+  center
+  jerusalem
+  south
+}
+
+enum Unit {
+  piece
+  meter
+  square_meter
+  cubic_meter
+  kilogram
+  ton
+  liter
+  bag
+  roll
+  sheet
+  pack
+}
+
+enum ScrapeRunStatus {
+  success
+  partial
+  failed
+}
+
+enum CatalogStatus {
+  staged
+  current
+  archived
+}
+
+enum MatchStatus {
+  confident
+  needs_review
+  no_match
+}
+
+model Supplier {
+  id       String  @id @default(cuid())
+  key      String  @unique
+  name     String
+  baseUrl  String
+  enabled  Boolean @default(true)
+
+  products   CatalogProduct[]
+  scrapeRuns ScrapeRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CatalogProduct {
+  id             String        @id @default(cuid())
+  supplier       Supplier      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId     String
+  supplierKey    String
+  sku            String?
+  name           String
+  nameNormalized String
+  unit           Unit
+  packSize       Float         @default(1)
+  price          Float
+  currency       String        @default("ILS")
+  region         Region
+  url            String
+  status         CatalogStatus @default(staged)
+  scrapedAt      DateTime
+  scrapeRun      ScrapeRun?    @relation(fields: [scrapeRunId], references: [id], onDelete: SetNull)
+  scrapeRunId    String?
+
+  createdAt DateTime @default(now())
+
+  // pg_trgm GIN index on nameNormalized is added via raw SQL migration.
+  @@index([supplierKey, region, status])
+  @@index([nameNormalized])
+}
+
+model ScrapeRun {
+  id            String          @id @default(cuid())
+  supplier      Supplier        @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId    String
+  supplierKey   String
+  region        Region
+  startedAt     DateTime        @default(now())
+  finishedAt    DateTime?
+  status        ScrapeRunStatus @default(failed)
+  productCount  Int             @default(0)
+  errorCount    Int             @default(0)
+  nullPriceRate Float           @default(0)
+  promoted      Boolean         @default(false)
+  notes         String?
+
+  products CatalogProduct[]
+
+  @@index([supplierKey, startedAt])
+}
+
+model Quote {
+  id            String      @id @default(cuid())
+  title         String?
+  customerName  String?
+  region        Region
+  currency      String      @default("ILS")
+  marginPercent Float       @default(0)
+  vatPercent    Float       @default(18)
+  // OverheadConfig (packages/contracts) serialized as JSON.
+  overhead      Json
+  // QuoteTotals serialized as JSON snapshot at creation time.
+  totals        Json
+  lines         QuoteLine[]
+  createdAt     DateTime    @default(now())
+}
+
+model QuoteLine {
+  id          String       @id @default(cuid())
+  quote       Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId     String
+  // original user input
+  rawText     String?
+  rawUnit     String?
+  // resolved/priced values
+  description String
+  quantity    Float
+  unit        Unit
+  unitPrice   Float
+  lineTotal   Float
+  // matching provenance
+  matchedProductId String?
+  matchStatus      MatchStatus?
+  order            Int          @default(0)
+}
+
+// Learned user corrections: normalized free-text -> chosen product.
+model MatchOverride {
+  id                String   @id @default(cuid())
+  rawTextNormalized String   @unique
+  productId         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
