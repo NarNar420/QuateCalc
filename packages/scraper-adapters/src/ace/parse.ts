@@ -4,7 +4,8 @@ import { ACE_SELECTORS } from "./selectors.js";
 
 /** Resolve a possibly-relative (incl. protocol-relative) href against baseUrl. */
 function absoluteUrl(href: string | undefined, baseUrl: string): string | null {
-  if (!href) return null;
+  // Reject empty/blank too: `new URL("", base)` resolves to base (a false positive).
+  if (!href || !href.trim()) return null;
   try {
     return new URL(href, baseUrl).toString();
   } catch {

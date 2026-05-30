@@ -4,7 +4,6 @@ import { tambourAdapter } from "./tambour/adapter.js";
 
 export { aceAdapter } from "./ace/adapter.js";
 export {
-  parseCategoryList,
   parseProducts,
   parseNextPageUrl,
   type AceParseContext,
