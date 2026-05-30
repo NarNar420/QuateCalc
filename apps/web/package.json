@@ -1,0 +1,33 @@
+{
+  "name": "@quatecalc/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@quatecalc/contracts": "workspace:*",
+    "@quatecalc/db": "workspace:*",
+    "@quatecalc/export": "workspace:*",
+    "@quatecalc/matching": "workspace:*",
+    "@quatecalc/pricing": "workspace:*",
+    "@quatecalc/units": "workspace:*",
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
