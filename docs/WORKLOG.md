@@ -114,5 +114,20 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Tests:** full monorepo green cold — 112 passing across 9 packages (units 9, pricing 26, export 17, scraper-core 19, matching 14, scraper-adapters 15, scraper-browser 3, web 7, worker 2); typecheck 11/11.
 - **Root cause:** no package loaded the root `.env`, so `matchLines`' Prisma call failed with `Environment variable not found: DATABASE_URL` under `pnpm -r test`. New `vitest.config.ts` reads the monorepo root `.env` via node fs (no new dependency) and exposes it through `test.env`; existing shell env wins, missing `.env` degrades gracefully.
 - **Verified:** local toolchain (node 24.15.0, pnpm 10.33.0, docker 29.5.2); Postgres+Redis containers healthy; `pnpm --filter @quatecalc/matching test` passes with `DATABASE_URL` unset; `pnpm -r test` fully green cold.
-- **Commit:** _(this commit)_.
+- **Commit:** `b11dfa8`.
 - **Status:** ✅ done.
+
+---
+
+## Wave 4 — Live price acquisition proven (ACE)
+
+### [2026-05-30] Live scrape one category end-to-end — pivot Tambour→ACE  (agent: claude-code/opus)
+- **Task:** prove the core price-acquisition pipeline against a real supplier, one category, through to a quote.
+- **Recon finding (the pivot):** Tambour (`tambour.co.il`) is a **brand/spec catalog with zero online prices** — Cloudflare was never the blocker; the site simply doesn't publish prices (no `₪`/`Offer`/`priceCurrency` on listings or product pages). Done bar impossible there. Recon confirmed **ACE (`ace.co.il`) is a real priced Magento store** (no anti-bot, Knockout-rendered → browser transport required). Pivoted. See `docs/superpowers/recon/2026-05-30-supplier-recon.md`.
+- **Paths:** `packages/scraper-core` (additive `categoryFilter`), `apps/worker` (`--category` flag, ACE fixture map, browser `waitForSelector`), `packages/scraper-adapters/src/ace/*` (real Magento selectors + parse + seeded category + real-capture fixture). Tambour adapter left intact (offline tests still green; just unused for live).
+- **Public API:** `runScrape(..., { categoryFilter })`; worker `--category <key|substring>`. ACE adapter: real `.product-item-info` parsing, current-price = `.priceNum`(+`.ag`) excluding `.old-price`, protocol-relative URL resolve, `data-sku`; categories seeded (mega-menu discovery = future work).
+- **Tests:** scraper-core 21 (+2 categoryFilter); ace parse 5 + adapter 2 rewritten against a trimmed real `category-listing.html`; worker e2e 2. Full repo: 113 passing, typecheck clean.
+- **Verified (LIVE, local):** `refresh --live --browser --supplier ace --category tools-paint-affixing` scraped **22 real priced products** (nullPriceRate 0), promoted through the health gate (`status=partial` — page 2 `?p=2` correctly hit `RobotsDisallowedError`, page-1-only by design). Then end-to-end: free-text `"קרטון אריזה"` → matched `"ACE 60-40-40 קרטון אריזה" @ ₪11.78` → quote (subtotal ₪58.90, +overhead, +12% margin, +18% VAT) → **grandTotal ₪276.08** → valid RTL XLSX + BOM CSV.
+- **Notes / future work:** (1) ACE robots disallows `/*?` so pagination (`?p=2`) is blocked → page-1-only; full catalog needs a robots-compliant pagination path or sitemap. (2) Mega-menu category discovery is seeded for now (one department). (3) **Seed collision:** `packages/db/seed.ts` uses `supplierKey: "ace"` for sample building-materials, so a real ACE live scrape archives the seed (and vice-versa); re-seed restores the test baseline. Consider a distinct seed key (e.g. `ace-demo`) so live + seed don't fight.
+- **Commit:** _(this commit)_.
+- **Status:** ✅ done (one category, real prices → quote → Excel). ⚠️ full catalog + robots-compliant pagination pending.
