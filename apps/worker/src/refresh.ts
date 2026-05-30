@@ -13,7 +13,7 @@
  *
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
  */
-import { RegionSchema, type ScraperContext, type ScrapeRegion } from "@quatecalc/contracts";
+import { RegionSchema, type CategoryRef, type ScraperContext, type ScrapeRegion } from "@quatecalc/contracts";
 import { getAdapter, runScrape } from "@quatecalc/scraper-core";
 import { registerAllAdapters } from "@quatecalc/scraper-adapters";
 import { fixtureContextBuilder, liveContextBuilder } from "./context.js";
@@ -24,6 +24,7 @@ interface Args {
   live: boolean;
   browser: boolean;
   proxy?: string;
+  category?: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -33,6 +34,7 @@ function parseArgs(argv: string[]): Args {
   let live = process.env.NODE_ENV === "production";
   let browser = false;
   let proxy: string | undefined;
+  let category: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -42,8 +44,9 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--fixtures") live = false;
     else if (a === "--browser") browser = true;
     else if (a === "--proxy") proxy = argv[++i];
+    else if (a === "--category") category = argv[++i];
   }
-  return { supplier, region: RegionSchema.parse(region), live, browser, proxy };
+  return { supplier, region: RegionSchema.parse(region), live, browser, proxy, category };
 }
 
 async function main() {
@@ -82,10 +85,20 @@ async function main() {
     mode = "LIVE(http)";
   }
 
-  console.log(`Refreshing "${adapter.supplierKey}" region=${args.region} mode=${mode}...`);
+  console.log(
+    `Refreshing "${adapter.supplierKey}" region=${args.region} mode=${mode}` +
+      `${args.category ? ` category=${args.category}` : ""}...`,
+  );
+
+  const categoryFilter = args.category
+    ? (c: CategoryRef) =>
+        c.key === args.category ||
+        c.label.includes(args.category!) ||
+        c.url.includes(args.category!)
+    : undefined;
 
   try {
-    const result = await runScrape(adapter, args.region, { buildContext });
+    const result = await runScrape(adapter, args.region, { buildContext, categoryFilter });
 
     console.log("\n=== Scrape result ===");
     console.log(JSON.stringify(result, null, 2));
