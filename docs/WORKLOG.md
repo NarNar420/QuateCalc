@@ -1,0 +1,91 @@
+# WORKLOG — QuateCalc agent army
+
+Append-only development log. Format & rules: see [`/AGENTS.md`](../AGENTS.md) §4.
+Newest entry at the bottom of each wave. Test counts are per-package vitest runs.
+
+---
+
+## Wave 0 — Foundation (blocking)
+
+### [2026-05-29] Wave 0 — monorepo + contracts + db + units  (agent: orchestrator/opus)
+- **Task:** stand up the TS monorepo and freeze the shared contracts everyone codes against.
+- **Paths:** root config, `packages/contracts`, `packages/db`, `packages/units`.
+- **Public API:** `@quatecalc/contracts` (Region/Unit/Product/ScraperAdapter/Matching/Pricing/Quote schemas); `@quatecalc/db` (Prisma models + repositories + seed); `@quatecalc/units` (`normalizeHebrew`, `normalizeUnit`, `convertQuantity`, `resolvePackCount`).
+- **Tests:** units 9 — Hebrew normalization, unit aliases, conversions, pack counts.
+- **Verified:** migrations applied with `pg_trgm` + GIN index; seed loaded; trigram search returns correct top match against Postgres.
+- **Commit:** `796c718`.
+- **Status:** ✅ done.
+
+---
+
+## Wave 1 — Parallel core packages
+
+### [2026-05-29] Wave 1 — scaffold  (agent: orchestrator/opus)
+- **Task:** create package manifests + tsconfig for the 5 core packages and install deps ONCE (so parallel agents never race the lockfile).
+- **Paths:** `packages/{pricing,export,matching,scraper-core,scraper-adapters}`.
+- **Commit:** `2f9075f`. **Status:** ✅ done.
+
+### [2026-05-29] Wave 1 — pricing engine  (agent: general-purpose/sonnet)
+- **Task:** pure totals/overhead/margin/VAT calculation.
+- **Paths:** `packages/pricing`.
+- **Public API:** `computeQuote`, `computeTotals`, `computeLines`, `computeOverhead`, `round2`.
+- **Tests:** 26 — rounding, fixed/percent overhead, margin on cost base, 18% VAT, full `computeQuote`, edge cases.
+- **Verified:** offline unit tests; output validated against `QuoteSchema`.
+- **Commit:** `7051ac8`. **Status:** ✅ done.
+
+### [2026-05-29] Wave 1 — export engine  (agent: general-purpose/sonnet)
+- **Task:** Excel + CSV export of a computed quote (Hebrew/RTL).
+- **Paths:** `packages/export`.
+- **Public API:** `exportQuote`, `toXlsx`, `toCsv`, `buildQuoteTable`.
+- **Tests:** 17 — CSV BOM + escaping, RTL xlsx round-trip, totals/grand-total cells.
+- **Verified:** offline; xlsx re-opened with ExcelJS to assert cells + `rightToLeft`.
+- **Commit:** `7051ac8`. **Status:** ✅ done.
+
+### [2026-05-29] Wave 1 — matching engine  (agent: general-purpose/opus)
+- **Task:** map free-text Hebrew material lines to catalog SKUs.
+- **Paths:** `packages/matching`.
+- **Public API:** `matchLines`, `combinedScore`, `resolveQuantity`, `toCatalogProduct`.
+- **Tests:** 14 — pure scoring, quantity/pack resolution, + 1 live-DB integration (region center).
+- **Verified:** integration test matched "מלט אפור" to a "מלט"-containing product against seeded Postgres.
+- **Commit:** `642bffb`. **Status:** ✅ done.
+
+### [2026-05-29] Wave 1 — scraper core + ACE adapter  (agent: general-purpose/opus)
+- **Task:** scraping framework + first supplier adapter.
+- **Paths:** `packages/scraper-core`, `packages/scraper-adapters/src/ace`.
+- **Public API:** `runScrape`, `registerAdapter`/`getAdapter`, `createRateLimiter`, `createRobotsChecker`, `createPageCache`, `createFetchText`, `parsePrice`; `aceAdapter`, `registerAceAdapter`.
+- **Tests:** scraper-core 17, scraper-adapters 8 — parsePrice, rate limiter, runner health-gate (fake deps), fixture parsers + paginated adapter.
+- **Verified:** fully offline/hermetic (no DB, no network).
+- **Commit:** `e9dce09`. **Status:** ✅ done.
+
+---
+
+## Wave 2 — Integration (apps)
+
+### [2026-05-30] Wave 2 — catalog refresh worker  (agent: orchestrator/opus)
+- **Task:** the automated refresh job driving the runner + adapter (fixtures/live).
+- **Paths:** `apps/worker`.
+- **Public API:** `pnpm --filter @quatecalc/worker refresh -- [--supplier] [--region] [--fixtures|--live]`.
+- **Tests:** 1 hermetic e2e (scrape→normalize→stage→promote, 5 fixture products).
+- **Verified:** ran against real Postgres — staging→promote archived 15 old rows, promoted 5 fresh; `ScrapeRun` recorded.
+- **Commit:** `0637d24` (worker + web scaffold). **Status:** ✅ done.
+
+### [2026-05-30] Wave 2 — Hebrew/RTL web UI + API  (agent: general-purpose/opus)
+- **Task:** 4-step wizard (input → review → configure → quote) + 5 API routes.
+- **Paths:** `apps/web`.
+- **Public API:** routes `/api/{match,catalog/search,overrides,quote,export}`; client wizard.
+- **Tests:** 7 — `parseMaterials`.
+- **Verified:** `next build` green; ran server and exercised match→quote→export against live Postgres (totals + 18% VAT correct = ₪2,688.83; CSV BOM + valid XLSX). Fixed `next.config.mjs` webpack `extensionAlias` for workspace TS resolution.
+- **Commit:** `e00a231`. **Status:** ✅ done.
+
+---
+
+## Additive — suppliers
+
+### [2026-05-30] Add Tambour (טמבור) supplier adapter  (agent: orchestrator/opus)
+- **Task:** second supplier; modeled on WooCommerce markup (tambour.co.il/shop is WooCommerce).
+- **Paths:** `packages/scraper-adapters/src/tambour`, `apps/worker` (supplier-aware fixtures).
+- **Public API:** `tambourAdapter`, `registerTambourAdapter`, `registerAllAdapters`, `TAMBOUR_SELECTORS`.
+- **Tests:** +7 (5 parse incl. sale-price, 2 adapter); worker e2e now 2 (ace + tambour).
+- **Verified:** real Postgres — tambour scrape promoted 5 products (supplier-scoped, ACE untouched); cross-supplier match "סופרקריל לבן" → tambour ₪289; sale price ₪119.9 captured over struck-through ₪149.
+- **Blocker noted:** live scrape of tambour.co.il returns **HTTP 403 (anti-bot/Cloudflare)** — real live prices need Wave 3 (Playwright/proxy + ToS approval). Fixtures model the real HTML structure meanwhile.
+- **Commit:** `a09cf00`. **Status:** ✅ done (live data ⚠️ pending Wave 3).
