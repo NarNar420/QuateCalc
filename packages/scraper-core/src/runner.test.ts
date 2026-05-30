@@ -159,4 +159,61 @@ describe("runScrape", () => {
     expect(result.promoted).toBe(true);
     expect(calls.promote).toHaveBeenCalledOnce();
   });
+
+  it("applies categoryFilter to limit which categories are scraped", async () => {
+    // Adapter exposing TWO categories, each yielding one product.
+    const twoCatAdapter: ScraperAdapter = {
+      supplierKey: "fake",
+      supplierName: "Fake Supplier",
+      baseUrl: "https://www.example.com",
+      async listCategories() {
+        return [
+          { key: "paints", label: "צבעים", url: "https://www.example.com/c/paints" },
+          { key: "tools", label: "כלים", url: "https://www.example.com/c/tools" },
+        ];
+      },
+      async *scrapeCategory(cat) {
+        yield {
+          name: `מוצר ${cat.key}`,
+          priceRaw: "₪ 10.00",
+          url: `https://www.example.com/p/${cat.key}`,
+        };
+      },
+    };
+
+    const { deps, staged } = makeFakeDeps();
+    const result = await runScrape(twoCatAdapter, "center", {
+      deps,
+      ctx: makeCtx(),
+      categoryFilter: (c) => c.key === "paints",
+    });
+
+    expect(result.productCount).toBe(1);
+    expect((staged[0] as { name: string }).name).toBe("מוצר paints");
+  });
+
+  it("scrapes all categories when no categoryFilter is given (unchanged default)", async () => {
+    const twoCatAdapter: ScraperAdapter = {
+      supplierKey: "fake",
+      supplierName: "Fake Supplier",
+      baseUrl: "https://www.example.com",
+      async listCategories() {
+        return [
+          { key: "paints", label: "צבעים", url: "https://www.example.com/c/paints" },
+          { key: "tools", label: "כלים", url: "https://www.example.com/c/tools" },
+        ];
+      },
+      async *scrapeCategory(cat) {
+        yield {
+          name: `מוצר ${cat.key}`,
+          priceRaw: "₪ 10.00",
+          url: `https://www.example.com/p/${cat.key}`,
+        };
+      },
+    };
+
+    const { deps } = makeFakeDeps();
+    const result = await runScrape(twoCatAdapter, "center", { deps, ctx: makeCtx() });
+    expect(result.productCount).toBe(2);
+  });
 });

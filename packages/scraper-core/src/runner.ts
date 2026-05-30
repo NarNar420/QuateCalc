@@ -54,6 +54,11 @@ export interface RunScrapeOptions {
   now?: () => Date;
   /** Fraction of unparseable prices above which the run is considered broken. */
   maxNullPriceRate?: number;
+  /**
+   * Optional predicate to limit which discovered categories are scraped.
+   * Default (undefined) scrapes every category — existing behavior.
+   */
+  categoryFilter?: (category: CategoryRef) => boolean;
 }
 
 /** Default no-op logger when a context is built by the runner. */
@@ -113,6 +118,12 @@ export async function runScrape(
   } catch (err) {
     errorCount++;
     ctx.log("error", `listCategories failed: ${String(err)}`);
+  }
+
+  if (options.categoryFilter) {
+    const before = categories.length;
+    categories = categories.filter(options.categoryFilter);
+    ctx.log("info", `categoryFilter kept ${categories.length}/${before} categories`);
   }
 
   for (const category of categories) {
