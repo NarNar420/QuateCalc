@@ -55,4 +55,16 @@ describe("parseProductJsonLd", () => {
   it("returns null when there is no Product JSON-LD", () => {
     expect(parseProductJsonLd("<html><body>no jsonld</body></html>", "https://www.ace.co.il/1")).toBeNull();
   });
+
+  it("keeps a zero price (price == null guard, not falsy)", () => {
+    const html = `<script type="application/ld+json">${JSON.stringify({
+      "@type": "Product",
+      name: "מבצע חינם",
+      sku: "777",
+      offers: { price: 0 },
+    })}</script>`;
+    const p = parseProductJsonLd(html, "https://www.ace.co.il/777");
+    expect(p).not.toBeNull();
+    expect(p?.priceRaw).toBe("₪0");
+  });
 });

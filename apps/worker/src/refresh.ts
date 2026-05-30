@@ -68,6 +68,10 @@ async function main() {
     console.log("--sitemap requires browser rendering (Product JSON-LD is JS-injected); enabling --browser.");
   }
 
+  if (args.sitemap && args.supplier !== "ace") {
+    console.warn(`--sitemap is ACE-only; ignoring --supplier "${args.supplier}".`);
+  }
+
   registerAllAdapters();
 
   const adapter = args.sitemap
@@ -91,9 +95,11 @@ async function main() {
     const { createBrowserTransport } = await import("@quatecalc/scraper-browser");
     const bt = createBrowserTransport({
       proxy: args.proxy,
-      // Wait for the WooCommerce/listing grid (or category tiles) to render.
-      waitForSelector: ".priceNum, .product-item-info",
-      challengeWaitMs: 6000,
+      // In sitemap mode we fetch individual product pages (JSON-LD is JS-injected;
+      // domcontentloaded + a short settle is enough).  In category mode we wait for
+      // the Magento listing grid to paint before reading prices.
+      waitForSelector: args.sitemap ? undefined : ".priceNum, .product-item-info",
+      challengeWaitMs: args.sitemap ? 1500 : 6000,
     });
     closeTransport = bt.close;
     buildContext = liveContextBuilder({ transport: bt.fetchText });

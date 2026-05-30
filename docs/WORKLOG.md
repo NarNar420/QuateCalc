@@ -131,3 +131,17 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Notes / future work:** (1) ACE robots disallows `/*?` so pagination (`?p=2`) is blocked → page-1-only; full catalog needs a robots-compliant pagination path or sitemap. (2) Mega-menu category discovery is seeded for now (one department). (3) **Seed collision — FIXED:** `packages/db/seed.ts` now seeds `supplierKey: "demo"` (was `"ace"`), so seeded sample data and a real ACE live scrape (`supplierKey: "ace"`) no longer clobber each other. matching stays green (it is supplier-agnostic, region-scoped).
 - **Commit:** _(this commit)_.
 - **Status:** ✅ done (one category, real prices → quote → Excel). ⚠️ full catalog + robots-compliant pagination pending.
+
+---
+
+## Wave 4 (cont.) — ACE sitemap crawler
+
+### [2026-05-30] ACE sitemap crawler — capped depth  (agent: claude-code/opus)
+- **Task:** reach ACE products beyond a category's page 1 (robots blocks `?p=`) via the sitemap, compliantly.
+- **Paths:** `packages/scraper-adapters/src/ace/{sitemap,sitemapAdapter}.ts` (+ tests + fixtures); `apps/worker/src/refresh.ts` (`--sitemap`, `--max-products`).
+- **Public API:** `createAceSitemapAdapter({ maxProducts })`, `parseSitemapLocs`, `isProductUrl`, `parseProductJsonLd`; worker `--sitemap --max-products N` (auto-enables `--browser`).
+- **Approach:** sitemap index → child sitemaps → numeric product URLs → browser-render each → parse `Product` JSON-LD (`offers.price`). Reuses the runner + health gate; promotes under supplierKey `ace`.
+- **Tests:** scraper-adapters +8 (sitemap parsers + capped adapter, offline against trimmed real fixtures).
+- **Volume / cost:** one child sitemap alone lists ~8,444 products (≈ tens of thousands total); product price is JS-injected so each needs a browser render. So a run is bounded by `--max-products` for politeness; an UNCAPPED full-catalog crawl is a multi-hour batch, not an interactive run.
+- **Commit:** _(this commit)_.
+- **Status:** ✅ done (capped depth). ⚠️ full-catalog batch + scheduling pending.
