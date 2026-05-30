@@ -102,3 +102,17 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Verified:** full transport pipeline proven over real HTTP against a localhost server; browser transport is production code (lazy Chromium, stealth init, proxy support).
 - **Blocker noted:** this sandbox blocks external egress (allowlist) AND the Playwright browser CDN (403), so a real live scrape / browser download can't run here — must run locally or in an env whose network policy allows the supplier + Playwright CDN. Code is ready for that.
 - **Commit:** _(this commit)_. **Status:** ✅ done (machinery); ⚠️ real live run requires a permissive network env.
+
+---
+
+## Additive — local dev / tooling
+
+### [2026-05-30] Local-run verification + matching test env loader  (agent: claude-code/opus)
+- **Task:** verify the repo runs outside the build sandbox; fix the one test that required a manually-exported env var.
+- **Paths:** `packages/matching` (new `vitest.config.ts`), `CLAUDE.md` (new, points to AGENTS.md so conventions auto-load).
+- **Public API:** none (test-runner config + doc pointer only).
+- **Tests:** full monorepo green cold — 112 passing across 9 packages (units 9, pricing 26, export 17, scraper-core 19, matching 14, scraper-adapters 15, scraper-browser 3, web 7, worker 2); typecheck 11/11.
+- **Root cause:** no package loaded the root `.env`, so `matchLines`' Prisma call failed with `Environment variable not found: DATABASE_URL` under `pnpm -r test`. New `vitest.config.ts` reads the monorepo root `.env` via node fs (no new dependency) and exposes it through `test.env`; existing shell env wins, missing `.env` degrades gracefully.
+- **Verified:** local toolchain (node 24.15.0, pnpm 10.33.0, docker 29.5.2); Postgres+Redis containers healthy; `pnpm --filter @quatecalc/matching test` passes with `DATABASE_URL` unset; `pnpm -r test` fully green cold.
+- **Commit:** _(this commit)_.
+- **Status:** ✅ done.
