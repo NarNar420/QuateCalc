@@ -91,6 +91,7 @@ robots.txt, הגבלת קצב ו-cache חלים על **כל** ה-transports (ע�
 pnpm --filter @quatecalc/scraper-browser install-browser   # מתקין Chromium (פעם אחת)
 pnpm --filter @quatecalc/worker refresh -- --live --browser --supplier tambour --region center
 ```
+📖 מדריך מלא להרצה מקומית (כולל דיבוג וכיוונון selectors): [`docs/LOCAL_SCRAPING.md`](docs/LOCAL_SCRAPING.md).
 
 ### מגבלות והערות חשובות
 - **טמבור מחזירה 403 ל-HTTP פשוט** (הגנת אנטי-בוט). מצב `--browser` נועד בדיוק לכך.

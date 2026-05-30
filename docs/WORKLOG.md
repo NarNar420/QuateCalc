@@ -101,4 +101,11 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Tests:** scraper-core 19 (incl. new real-HTTP integration: robots+cache+rate-limit over a local server); scraper-browser 3 (stealth/UA, offline).
 - **Verified:** full transport pipeline proven over real HTTP against a localhost server; browser transport is production code (lazy Chromium, stealth init, proxy support).
 - **Blocker noted:** this sandbox blocks external egress (allowlist) AND the Playwright browser CDN (403), so a real live scrape / browser download can't run here — must run locally or in an env whose network policy allows the supplier + Playwright CDN. Code is ready for that.
-- **Commit:** _(this commit)_. **Status:** ✅ done (machinery); ⚠️ real live run requires a permissive network env.
+- **Commit:** `5083425`. **Status:** ✅ done (machinery); ⚠️ real live run requires a permissive network env.
+
+### [2026-05-30] Wave 3 — local-run runbook + `--headful` debug flag  (agent: orchestrator/opus)
+- **Task:** enable the user to run live browser scraping locally (where network is open).
+- **Paths:** `docs/LOCAL_SCRAPING.md` (new), `apps/worker/src/refresh.ts` (`--headful`).
+- **Public API:** `refresh -- --headful` shows the browser window for debugging anti-bot challenges.
+- **Verified:** worker typecheck; fixtures regression run still `success` (5 Tambour products) after the transport refactor.
+- **Commit:** _(this commit)_. **Status:** ✅ done.

@@ -9,6 +9,7 @@
  * --live --browser: fetch via a real Chromium (Playwright) — executes JS and
  *   passes most anti-bot challenges (e.g. Cloudflare). Requires the browser
  *   binary: `pnpm --filter @quatecalc/scraper-browser install-browser`.
+ * --headful: show the browser window (local debugging of challenges).
  * --proxy URL: route the browser through a proxy (IP rotation / geo).
  *
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
@@ -23,6 +24,7 @@ interface Args {
   region: ScrapeRegion;
   live: boolean;
   browser: boolean;
+  headful: boolean;
   proxy?: string;
 }
 
@@ -32,6 +34,7 @@ function parseArgs(argv: string[]): Args {
   // default to fixtures unless --live is passed or NODE_ENV=production
   let live = process.env.NODE_ENV === "production";
   let browser = false;
+  let headful = false;
   let proxy: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
@@ -41,9 +44,12 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--live") live = true;
     else if (a === "--fixtures") live = false;
     else if (a === "--browser") browser = true;
-    else if (a === "--proxy") proxy = argv[++i];
+    else if (a === "--headful") {
+      browser = true;
+      headful = true;
+    } else if (a === "--proxy") proxy = argv[++i];
   }
-  return { supplier, region: RegionSchema.parse(region), live, browser, proxy };
+  return { supplier, region: RegionSchema.parse(region), live, browser, headful, proxy };
 }
 
 async function main() {
@@ -69,6 +75,7 @@ async function main() {
     // Dynamic import so Playwright is only loaded when actually scraping live.
     const { createBrowserTransport } = await import("@quatecalc/scraper-browser");
     const bt = createBrowserTransport({
+      headless: !args.headful,
       proxy: args.proxy,
       // Wait for the WooCommerce/listing grid (or category tiles) to render.
       waitForSelector: "ul.products, ul.product-categories, li.product",
