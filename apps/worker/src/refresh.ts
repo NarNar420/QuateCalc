@@ -10,6 +10,8 @@
  *   passes most anti-bot challenges (e.g. Cloudflare). Requires the browser
  *   binary: `pnpm --filter @quatecalc/scraper-browser install-browser`.
  * --proxy URL: route the browser through a proxy (IP rotation / geo).
+ * --category <key|substring>: limit scraping to categories whose key matches exactly
+ *   or whose label/URL contains the substring.
  *
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
  */
@@ -90,11 +92,12 @@ async function main() {
       `${args.category ? ` category=${args.category}` : ""}...`,
   );
 
-  const categoryFilter = args.category
+  const categoryArg = args.category;
+  const categoryFilter = categoryArg
     ? (c: CategoryRef) =>
-        c.key === args.category ||
-        c.label.includes(args.category!) ||
-        c.url.includes(args.category!)
+        c.key === categoryArg ||
+        c.label.includes(categoryArg) ||
+        c.url.includes(categoryArg)
     : undefined;
 
   try {
