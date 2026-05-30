@@ -4,6 +4,9 @@
 - **Status:** approved (design); pending implementation plan
 - **Owner agent:** claude-code/opus
 - **Branch:** `chore/matching-vitest-env` (continue here; do not merge until done bar met)
+- **Revised:** 2026-05-30 — post-code-review: one-category scoping needs a real
+  `--category` filter (not free); `refresh.ts` is in scope; robots-block + paint-term
+  added to risks/verify.
 
 ## Problem
 
@@ -25,9 +28,13 @@ supplier are explicitly out of scope for this spec.
 
 - Full Tambour catalog (all categories).
 - ACE live scrape.
-- Any change to contracts, DB schema, `scraper-core`, or `scraper-browser` (transport
-  is already built). Adapter pattern means **only the Tambour adapter folder changes**,
-  plus possibly the worker's fixture URL→file map.
+- Any change to contracts, DB schema, or `scraper-browser` (transport is already built).
+- **Exception (necessary):** one-category scoping is **not** supported by the current
+  code — `runScrape` loops every category from `adapter.listCategories()` and the worker
+  has no category flag. Hitting the done bar requires a small, additive `--category`
+  filter in `scraper-core/runner.ts` + `apps/worker/src/refresh.ts`. This is the only
+  scraper-core change; it is additive (optional option, default = all categories, so
+  existing behavior and tests are unchanged).
 - CI-time live scraping. Live runs are a manual gate (need network + Chromium).
 
 ## Approach
@@ -79,17 +86,31 @@ exposes it; full multi-strategy normalization rework (C, YAGNI for one category)
 - If the worker's fixture URL→file map (`apps/worker/src/context.ts`) references category
   paths that changed, update the map (Tambour entry only).
 
-### Phase 4 — Live run (one category)
-- `pnpm --filter @quatecalc/worker refresh -- --live --browser --supplier tambour --region center`,
-  scoped to the single recon-chosen category.
-- Run writes `staged` rows; the runner health gate promotes to `current` only on a clean
-  run, archiving old rows. A failed/empty scrape leaves the catalog untouched (existing
-  `runner.ts` behavior — no new code needed for safety).
+### Phase 4 — One-category scoping (small additive code) + live run
+- **Code:** add an optional category filter so the run can be limited to the recon-chosen
+  category (politeness + fewer requests through Cloudflare = less likely to be blocked):
+  - `scraper-core/runner.ts`: add `categoryFilter?: (c: CategoryRef) => boolean` to
+    `RunScrapeOptions`; apply it to the discovered `categories` list before the loop.
+    Default undefined = all categories (existing behavior + tests unchanged).
+  - `apps/worker/src/refresh.ts`: add `--category <key|substring>` arg; when set, pass a
+    `categoryFilter` matching that category's `key`/`label`/`url`.
+- **Also fix in `refresh.ts`:** the browser transport's hardcoded
+  `waitForSelector: "ul.products, ul.product-categories, li.product"` must be updated to
+  whatever Phase 1 recon shows is the real "grid rendered" signal, else the page may be
+  read before products render.
+- **Run:**
+  `pnpm --filter @quatecalc/worker refresh -- --live --browser --supplier tambour --region center --category <recon-category>`
+- Run writes `staged` rows; the health gate (`runner.ts:157`) promotes to `current` only
+  on a clean run, archiving old rows. A failed/empty scrape leaves the catalog untouched —
+  existing behavior, no new safety code.
 
 ### Phase 5 — End-to-end verify
 - Confirm real Tambour products with numeric prices are `current` in Postgres.
 - Run a real Hebrew material line through match → quote → export; confirm a generated
   quote with real ₪ amounts and a valid XLSX/CSV.
+- **The verify line must be a paint term** (Tambour's category is paints, e.g. סופרקריל /
+  צבע), not a building-material term like מלט — match relies on token overlap with the
+  scraped products, and the seed catalog (building materials) is a different domain.
 
 ## Components touched (ownership: in-bounds per AGENTS.md §1)
 
@@ -101,8 +122,11 @@ exposes it; full multi-strategy normalization rework (C, YAGNI for one category)
 | `packages/scraper-adapters/src/tambour/parse.test.ts` | assert real structure |
 | `packages/scraper-adapters/src/tambour/adapter.test.ts` | assert real structure |
 | `apps/worker/src/context.ts` | Tambour fixture URL→file map, only if paths changed |
+| `apps/worker/src/refresh.ts` | `--category` arg; update browser `waitForSelector` to real grid signal |
+| `packages/scraper-core/src/runner.ts` | additive optional `categoryFilter` in `RunScrapeOptions` |
 
-Untouched: contracts, db, units, matching, pricing, export, scraper-core, scraper-browser, ACE.
+Untouched: contracts, db, units, matching, pricing, export, scraper-browser, ACE.
+(`scraper-core` gets ONE additive, default-off option — see Non-goals exception.)
 
 ## Error handling / safety
 
@@ -110,6 +134,12 @@ Untouched: contracts, db, units, matching, pricing, export, scraper-core, scrape
 - **Cloudflare not cleared** → save challenge HTML, report tuning/proxy options, do not fake success.
 - **Catalog safety** → health gate (`runner.ts`) guarantees a broken or empty scrape never
   promotes; real prices replace prior `current` rows only on a clean, health-passing run.
+- **robots.txt may legitimately block** → if Tambour's robots.txt disallows `/shop/` or
+  the category path, the robots-respecting fetch returns empty → 0 products → health gate
+  `failed` → done bar unreachable. This is a real stop condition, not a bug: check
+  `tambour.co.il/robots.txt` during recon. Do **not** disable `SCRAPER_RESPECT_ROBOTS` to
+  force it — report instead (commercial scraping against robots is a ToS decision for the
+  user, not a default).
 - **Data hygiene** → raw captures stay in `$CLAUDE_JOB_DIR/tmp`; only trimmed, secret-free
   HTML is committed as fixtures. Never log full page bodies or secrets (AGENTS.md §5).
 - **Legality** → Tambour is WooCommerce; respect robots.txt + rate limits (runner already
@@ -130,9 +160,13 @@ Untouched: contracts, db, units, matching, pricing, export, scraper-core, scrape
 ```
 pnpm --filter @quatecalc/scraper-adapters typecheck   # zero errors
 pnpm --filter @quatecalc/scraper-adapters test        # green, offline
+pnpm --filter @quatecalc/scraper-core test            # runner + new categoryFilter
 pnpm --filter @quatecalc/worker test                  # e2e still green
 pnpm -r typecheck && pnpm -r test                     # whole repo before commit
 ```
+
+The additive `categoryFilter` gets a `runner.test.ts` case (filter selects a subset;
+undefined = all — proves existing behavior unchanged).
 
 ## Open risk
 
