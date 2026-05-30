@@ -1,6 +1,12 @@
 /**
- * Dev seed: one supplier + a small building-materials catalog (region=center),
+ * Dev seed: one DEMO supplier + a small building-materials catalog (region=center),
  * marked `current` so matching/UI work end-to-end without a live scrape.
+ *
+ * The supplier key is `demo` (NOT `ace`) on purpose: a real ACE live scrape uses
+ * supplierKey `ace`, and promote archives the prior `current` rows for that
+ * supplier+region. Sharing a key would make the seed and a live scrape clobber
+ * each other. A distinct `demo` key lets seeded sample data and real scraped data
+ * coexist in the same dev database.
  *
  * Run: pnpm seed
  */
@@ -8,7 +14,7 @@ import { normalizeHebrew } from "@quatecalc/units";
 import { prisma } from "./client.js";
 import type { Region, Unit } from "@prisma/client";
 
-const SUPPLIER = { key: "ace", name: "ACE (לדוגמה)", baseUrl: "https://www.ace.co.il" };
+const SUPPLIER = { key: "demo", name: "ספק לדוגמה", baseUrl: "https://example.com" };
 
 interface SeedProduct {
   name: string;
