@@ -1,24 +1,22 @@
 /**
- * All CSS selectors for the ACE adapter live here so that markup changes only
- * touch ONE file. The shapes model a generic e-commerce listing/category page.
+ * CSS selectors for the ACE adapter (ace.co.il — Magento, Knockout-rendered).
+ * Markup changes touch ONLY this file. Prices need custom handling (special vs
+ * old vs agorot), so price extraction lives in parse.ts, not a single selector.
  */
 export const ACE_SELECTORS = {
-  /** Category navigation: anchors to category listing pages. */
-  categoryLink: "nav.main-categories a.category-link",
-
-  /** A single product card on a listing page. */
-  productCard: "li.product-item",
-  /** Product name within a card. */
-  productName: ".product-title",
-  /** Product price text within a card. */
-  productPrice: ".product-price",
-  /** Optional unit/packaging hint within a card. */
-  productUnit: ".product-unit",
-  /** Anchor linking to the product detail page. */
-  productLink: "a.product-link",
-  /** SKU / catalog number element (often a data attribute on the card). */
+  /** A single product card on a category listing page. */
+  productCard: ".product-item-info",
+  /** Anchor carrying the product name (text), SKU (data-sku), and href. */
+  productLink: "a.product-item-link",
+  /** SKU attribute on the product link. */
   productSkuAttr: "data-sku",
-
-  /** "Next page" pagination link (absent on the last page). */
-  nextPage: "a.pagination-next",
+  /** Price block; the CURRENT price is the .price NOT inside .old-price. */
+  priceCurrent: ".product-item-price .price",
+  /** Shekel integer + agorot fraction within a price block. */
+  priceNum: ".priceNum",
+  priceAgorot: ".ag",
+  /** Container marking the struck-through regular (old) price to EXCLUDE. */
+  oldPrice: ".old-price",
+  /** WooCommerce-style "next page" link (Magento toolbar). */
+  nextPage: "li.item.pages-item-next a, a.action.next",
 } as const;

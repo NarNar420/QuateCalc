@@ -4,15 +4,26 @@ import type {
   ScraperAdapter,
   ScraperContext,
 } from "@quatecalc/contracts";
-import { parseCategoryList, parseNextPageUrl, parseProducts } from "./parse.js";
+import { parseNextPageUrl, parseProducts } from "./parse.js";
 
 const BASE_URL = "https://www.ace.co.il";
 
-/** Where the adapter starts category discovery from. */
-const CATEGORIES_URL = `${BASE_URL}/categories`;
-
 /** Defensive cap so a broken "next page" link can't loop forever. */
 const MAX_PAGES = 50;
+
+/**
+ * Seeded ACE departments (SEO-slug category pages). ACE exposes categories via
+ * a mega-menu rather than a single index page, so they are seeded here. The
+ * worker's --category flag (categoryFilter) narrows a run to one of these.
+ * Full mega-menu discovery is future work.
+ */
+const CATEGORIES: CategoryRef[] = [
+  {
+    key: "tools-paint-affixing",
+    label: "כלי עבודה, צבע ופרזול",
+    url: `${BASE_URL}/tools-paint-affixing`,
+  },
+];
 
 export const aceAdapter: ScraperAdapter = {
   supplierKey: "ace",
@@ -20,10 +31,8 @@ export const aceAdapter: ScraperAdapter = {
   baseUrl: BASE_URL,
 
   async listCategories(ctx: ScraperContext): Promise<CategoryRef[]> {
-    const html = await ctx.fetchText(CATEGORIES_URL);
-    const categories = parseCategoryList(html, { baseUrl: BASE_URL });
-    ctx.log("info", `ace: discovered ${categories.length} categories`);
-    return categories;
+    ctx.log("info", `ace: ${CATEGORIES.length} seeded categories`);
+    return CATEGORIES;
   },
 
   async *scrapeCategory(
@@ -43,8 +52,7 @@ export const aceAdapter: ScraperAdapter = {
         categoryPath: [category.label],
       });
 
-      // Pagination stop condition: no products on the page => done.
-      if (products.length === 0) break;
+      if (products.length === 0) break; // pagination stop condition
 
       for (const product of products) {
         yield { ...product, region: ctx.region };

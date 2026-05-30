@@ -35,19 +35,19 @@ describe("worker refresh (fixtures, hermetic)", () => {
     });
 
     expect(result.status).toBe("success");
-    expect(result.productCount).toBe(5);
+    expect(result.productCount).toBe(4);
     expect(result.nullPriceRate).toBe(0);
     expect(result.promoted).toBe(true);
-    expect(captured.staged).toHaveLength(5);
+    expect(captured.staged).toHaveLength(4);
 
-    // prices parsed from "₪ 28.90" / "42.50 ש\"ח" style fixtures
-    const prices = captured.staged.map((r) => r.price).sort((a, b) => a - b);
+    // prices parsed from "₪11.78" / "₪349" rendered Magento markup
+    const prices = captured.staged.map((r) => r.price);
     expect(prices.every((p) => typeof p === "number" && p > 0)).toBe(true);
 
-    // names normalized (quotes stripped, final letters folded)
-    const melet = captured.staged.find((r) => r.nameNormalized.includes("מלט"));
-    expect(melet).toBeDefined();
-    expect(melet?.nameNormalized).not.toContain('"');
+    // a real scraped SKU is present and names are normalized (quotes stripped)
+    const carton = captured.staged.find((r) => r.sku === "1701065");
+    expect(carton).toBeDefined();
+    expect(carton?.nameNormalized).not.toContain('"');
   });
 
   it("scrapes the Tambour (WooCommerce) fixtures end-to-end, using sale prices", async () => {

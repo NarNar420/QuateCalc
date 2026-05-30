@@ -52,9 +52,7 @@ const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, strin
   ace: {
     dir: "packages/scraper-adapters/src/ace/__fixtures__",
     map: {
-      "/categories": "categories.html",
-      "/categories/building-materials": "products-page1.html",
-      "/categories/building-materials?page=2": "products-page2.html",
+      "/tools-paint-affixing": "category-listing.html",
     },
   },
   tambour: {

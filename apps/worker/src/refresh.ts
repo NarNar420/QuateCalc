@@ -76,8 +76,8 @@ async function main() {
     const bt = createBrowserTransport({
       proxy: args.proxy,
       // Wait for the WooCommerce/listing grid (or category tiles) to render.
-      waitForSelector: "ul.products, ul.product-categories, li.product",
-      challengeWaitMs: 1500,
+      waitForSelector: ".priceNum, .product-item-info",
+      challengeWaitMs: 6000,
     });
     closeTransport = bt.close;
     buildContext = liveContextBuilder({ transport: bt.fetchText });
