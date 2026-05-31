@@ -147,3 +147,18 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Volume / cost:** one child sitemap lists ~8,444 leaf URLs (≈ tens of thousands total). Each listing is a browser render. Bounded by `--max-products`; an uncapped full crawl is a multi-hour batch.
 - **Commit:** `af19303` (refactor); `56b1f44`/`6f3e926` (initial + review fixes).
 - **Status:** ✅ done (capped depth, live-proven; also provides category discovery). ⚠️ full-catalog batch + scheduling pending.
+
+---
+
+## Additive — suppliers (Home Center)
+
+### [2026-05-31] Add Home Center (הום סנטר) Shopify adapter — HTTP, no browser  (agent: claude-code/opus)
+- **Task:** add a second live-priced supplier; expand coverage + lay groundwork for on-demand scanning.
+- **Recon:** `homecenter.co.il` is **Shopify**. `robots.txt` has no `User-agent: *` block (default allow); `?page=`/`*search` disallowed. `/products.json?limit=250` and `/collections.json` return product JSON with prices over **plain HTTP — no browser needed** (unlike ACE's Knockout render). Per-collection `products.json` was unreliable (empty auto-collections), so the adapter uses the global products feed.
+- **Paths:** `packages/scraper-adapters/src/homecenter/{shopify,adapter}.ts` (+ tests + `__fixtures__/products.json`); `packages/scraper-adapters/src/index.ts` (register + export); `apps/worker/src/context.ts` (fixture map).
+- **Public API:** `homecenterAdapter` (supplierKey `homecenter`), `parseShopifyProducts(jsonText, { baseUrl })`; registered via `registerAllAdapters()`. Runs with `--live` (HTTP); no `--browser`.
+- **Approach:** one synthetic category over `/products.json?limit=250` (single page — `?page=` is robots-disallowed). Parse `products[].{title, variants[0].{sku,price}, handle, product_type}` → RawProduct (`priceRaw` `₪<price>`, sku = variant sku or handle, url = `/products/<handle>`, categoryPath = `[product_type]`).
+- **Tests:** scraper-adapters +5 (shopify parser 3 + adapter 2); offline against a trimmed real `products.json`.
+- **Verified (LIVE, local):** `refresh --live --supplier homecenter` → **250 real products, nullPriceRate 0, status=success, promoted=true** in <1s. Cross-supplier match: free-text `"סרט אלומיניום"` → HC product `₪79.9` (`needs_review`). Promotes under `homecenter` (no collision with `demo`/`ace`).
+- **Commit:** `f88f02f` (adapter); `f489490` (review fix — registration only in index.ts).
+- **Status:** ✅ done (live-proven). Notes: single-page feed (250) for now; broader coverage = sitemap product URLs or category collections (future).
