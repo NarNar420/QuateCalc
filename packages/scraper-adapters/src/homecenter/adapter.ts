@@ -4,7 +4,6 @@ import type {
   ScraperAdapter,
   ScraperContext,
 } from "@quatecalc/contracts";
-import { registerAdapter } from "@quatecalc/scraper-core";
 import { parseShopifyProducts } from "./shopify.js";
 
 const BASE_URL = "https://www.homecenter.co.il";
@@ -29,7 +28,3 @@ export const homecenterAdapter: ScraperAdapter = {
     }
   },
 };
-
-export function registerHomecenterAdapter(): void {
-  registerAdapter(homecenterAdapter);
-}
