@@ -63,6 +63,12 @@ const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, strin
       "/product-category/paints/page/2/": "products-page2.html",
     },
   },
+  homecenter: {
+    dir: "packages/scraper-adapters/src/homecenter/__fixtures__",
+    map: {
+      "/products.json?limit=250": "products.json",
+    },
+  },
 };
 
 function repoRoot(): string {

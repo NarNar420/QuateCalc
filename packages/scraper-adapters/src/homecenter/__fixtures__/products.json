@@ -1,0 +1,191 @@
+{
+  "products": [
+    {
+      "id": 9986490859767,
+      "title": "סרט אלומיניום דביק PREMIUM כסוף ברוחב 7 סמ ובאורך 50 מטר",
+      "handle": "1777878798868",
+      "body_html": "<p>סרט אלומיניום דביק PREMIUM כסוף ברוחב 7 ס”מ ובאורך 50 מטר – פתרון איכותי, אמין ונוח לשימוש, שתוכנן להעניק לך ביצועים מיטביים וחוויית שימוש מושלמת.</p>",
+      "published_at": "2026-05-29T12:30:57+03:00",
+      "created_at": "2026-05-29T10:27:19+03:00",
+      "updated_at": "2026-05-31T11:16:39+03:00",
+      "vendor": "מלכן הדפסה מתקדמת",
+      "product_type": "סרטי איטום",
+      "tags": [
+        "metriko",
+        "ShippingTypeB",
+        "זמינות נמוכה",
+        "ללא מעמ באתר 2",
+        "מוצרי איטום",
+        "סרטי איטום",
+        "צבע וחומרי בניה"
+      ],
+      "variants": [
+        {
+          "id": 50815681528055,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "option2": null,
+          "option3": null,
+          "sku": "1777878798868",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": false,
+          "price": "79.90",
+          "grams": 0,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 9986490859767,
+          "created_at": "2026-05-29T10:27:19+03:00",
+          "updated_at": "2026-05-31T11:16:39+03:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 63069480714487,
+          "created_at": "2026-05-29T11:15:48+03:00",
+          "position": 1,
+          "updated_at": "2026-05-29T18:15:49+03:00",
+          "product_id": 9986490859767,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0671/9979/5447/files/1777878798868-1.jpg?v=1780067749",
+          "width": 1200,
+          "height": 1200
+        }
+      ],
+      "options": [
+        {
+          "name": "Title",
+          "position": 1,
+          "values": [
+            "Default Title"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9986490826999,
+      "title": "סרט בד(חבלה) איכותי בגודל 48 ממ * 25 מטר- חום",
+      "handle": "1777878798867",
+      "body_html": "<p>סרט בד (חבלה) איכותי בגודל 48 מ”מ &amp; 25 מטר- חום – פתרון איכותי, אמין ונוח לשימוש, שתוכנן להעניק לך ביצועים מיטביים וחוויית שימוש מושלמת.</p>",
+      "published_at": "2026-05-29T12:30:56+03:00",
+      "created_at": "2026-05-29T10:27:18+03:00",
+      "updated_at": "2026-05-31T11:16:39+03:00",
+      "vendor": "מלכן הדפסה מתקדמת",
+      "product_type": "סרט חבלנים",
+      "tags": [
+        "metriko",
+        "ShippingTypeB4",
+        "ללא מעמ באתר 2",
+        "סרט חבלנים",
+        "סרטי דבק וסרטי סימון",
+        "צבע וחומרי בניה"
+      ],
+      "variants": [
+        {
+          "id": 50815681495287,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "option2": null,
+          "option3": null,
+          "sku": "1777878798867",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "24.90",
+          "grams": 0,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 9986490826999,
+          "created_at": "2026-05-29T10:27:18+03:00",
+          "updated_at": "2026-05-31T11:16:39+03:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 63069480648951,
+          "created_at": "2026-05-29T11:15:46+03:00",
+          "position": 1,
+          "updated_at": "2026-05-29T18:15:48+03:00",
+          "product_id": 9986490826999,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0671/9979/5447/files/1777878798867-1.jpg?v=1780067748",
+          "width": 1200,
+          "height": 1200
+        }
+      ],
+      "options": [
+        {
+          "name": "Title",
+          "position": 1,
+          "values": [
+            "Default Title"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9986490794231,
+      "title": "סרט בד (חבלה) איכותי בגודל 48 ממ * 25 מטר- צהוב",
+      "handle": "1777878798866",
+      "body_html": "<p>סרט בד (חבלה) איכותי בגודל 48 מ”מ &amp; 25 מטר- צהוב – פתרון איכותי, אמין ונוח לשימוש, שתוכנן להעניק לך ביצועים מיטביים וחוויית שימוש מושלמת.</p>",
+      "published_at": "2026-05-29T12:30:56+03:00",
+      "created_at": "2026-05-29T10:27:17+03:00",
+      "updated_at": "2026-05-31T11:16:39+03:00",
+      "vendor": "מלכן הדפסה מתקדמת",
+      "product_type": "סרט חבלנים",
+      "tags": [
+        "metriko",
+        "ShippingTypeB4",
+        "ללא מעמ באתר 2",
+        "סרט חבלנים",
+        "סרטי דבק וסרטי סימון",
+        "צבע וחומרי בניה"
+      ],
+      "variants": [
+        {
+          "id": 50815681462519,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "option2": null,
+          "option3": null,
+          "sku": "1777878798866",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "24.90",
+          "grams": 0,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 9986490794231,
+          "created_at": "2026-05-29T10:27:17+03:00",
+          "updated_at": "2026-05-31T11:16:39+03:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 63069480485111,
+          "created_at": "2026-05-29T11:15:45+03:00",
+          "position": 1,
+          "updated_at": "2026-05-29T18:15:47+03:00",
+          "product_id": 9986490794231,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0671/9979/5447/files/1777878798866-1.jpg?v=1780067747",
+          "width": 1200,
+          "height": 1200
+        }
+      ],
+      "options": [
+        {
+          "name": "Title",
+          "position": 1,
+          "values": [
+            "Default Title"
+          ]
+        }
+      ]
+    }
+  ]
+}
