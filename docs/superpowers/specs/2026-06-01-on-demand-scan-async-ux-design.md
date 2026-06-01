@@ -89,6 +89,25 @@ for this tool. Option A is the pick only if "single process" is worth the Playwr
 
 > This is the one decision needed before the plan. Everything else below is architecture-agnostic.
 
+## Chosen architecture: **B**, refined to a Postgres-polling queue (no Redis)
+
+User picked Option B. Refinement to avoid new dependency edges: **the `ScanJob` table is the queue** —
+no Redis. `POST /api/scan` inserts a `ScanJob` with `status='pending'`. A new worker mode
+`pnpm --filter @quatecalc/worker scan-daemon` polls Postgres (~1s) for the oldest `pending` job,
+claims it atomically (`UPDATE ... WHERE status='pending' ... ` via a `claimNextScanJob` repo using
+`FOR UPDATE SKIP LOCKED` / a conditional `updateMany` guard), runs the full job (scrape → insert
+scanned rows → `matchLines` → write `result`), and sets `status='complete'`. The web app polls
+`GET /api/scan/:id` (reads Postgres). Both apps already depend on `@quatecalc/db`, so **no Redis and
+no new queue dependency**.
+
+**The one new dependency edge:** the daemon runs `matchLines`, so `apps/worker` must depend on
+`@quatecalc/matching` (it does not currently — it was deliberately kept out of the SP1 proof). This is
+a legitimate production dependency and requires **one coordinated `pnpm install`** by the maintainer
+(per the AGENTS.md lockfile boundary). The plan batches this into its first task and orders work so the
+dep-free tasks (contracts, db, orchestration logic with fakes) land first; the daemon-wiring + web
+tasks follow after the `pnpm install`. The `ScanJob` Prisma model also needs `prisma migrate` +
+`generate` (same as SP1's migration task).
+
 ## Components (architecture-agnostic)
 
 1. **contracts** — `ScanJobStatus`, `ScanProgress`, `ScanJobView` (the GET response) Zod schemas.
