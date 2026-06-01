@@ -69,6 +69,12 @@ const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, strin
       "/products.json?limit=250": "products.json",
     },
   },
+  homreybinyan: {
+    dir: "packages/scraper-adapters/src/homreybinyan/__fixtures__",
+    map: {
+      "/products.json?limit=250": "products.json",
+    },
+  },
 };
 
 function repoRoot(): string {

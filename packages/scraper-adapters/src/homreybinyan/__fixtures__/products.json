@@ -1,0 +1,104 @@
+{
+  "products": [
+    {
+      "id": 8001234560001,
+      "title": "סט מברגים 7 יחידות SIGNET",
+      "handle": "סט-מברגים-כחול-צהוב-7-יח-signet",
+      "body_html": "<p>סט מברגים איכותי 7 יחידות מבית SIGNET.</p>",
+      "vendor": "SIGNET",
+      "product_type": "",
+      "tags": ["כלי עבודה", "מברגים"],
+      "variants": [
+        {
+          "id": 49001234560001,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "sku": "",
+          "requires_shipping": true,
+          "taxable": true,
+          "available": true,
+          "price": "75.00",
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8001234560001
+        }
+      ],
+      "options": [{ "name": "Title", "position": 1, "values": ["Default Title"] }]
+    },
+    {
+      "id": 8001234560002,
+      "title": "Blundstone 510 – נעלי בלנסטון שחור",
+      "handle": "blundstone-510-נעלי-בלנסטון-שחור",
+      "body_html": "<p>נעלי בלנסטון 510 שחור.</p>",
+      "vendor": "Blundstone",
+      "product_type": "",
+      "tags": ["הנעלה", "נעלי עבודה"],
+      "variants": [
+        {
+          "id": 49001234560002,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "sku": "",
+          "requires_shipping": true,
+          "taxable": true,
+          "available": true,
+          "price": "535.00",
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8001234560002
+        }
+      ],
+      "options": [{ "name": "Title", "position": 1, "values": ["Default Title"] }]
+    },
+    {
+      "id": 8001234560003,
+      "title": "Blundstone 587 – נעלי בלנסטון שחור אפור",
+      "handle": "blundstone-587-נעלי-בלנסטון-שחור-אפור",
+      "body_html": "<p>נעלי בלנסטון 587 שחור אפור.</p>",
+      "vendor": "Blundstone",
+      "product_type": "",
+      "tags": ["הנעלה", "נעלי עבודה"],
+      "variants": [
+        {
+          "id": 49001234560003,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "sku": "",
+          "requires_shipping": true,
+          "taxable": true,
+          "available": true,
+          "price": "535.00",
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8001234560003
+        }
+      ],
+      "options": [{ "name": "Title", "position": 1, "values": ["Default Title"] }]
+    },
+    {
+      "id": 8001234560004,
+      "title": "Blundstone 585 – נעלי בלנסטון חום",
+      "handle": "blundstone-585-נעלי-בלנסטון-חום",
+      "body_html": "<p>נעלי בלנסטון 585 חום.</p>",
+      "vendor": "Blundstone",
+      "product_type": "",
+      "tags": ["הנעלה", "נעלי עבודה"],
+      "variants": [
+        {
+          "id": 49001234560004,
+          "title": "Default Title",
+          "option1": "Default Title",
+          "sku": "",
+          "requires_shipping": true,
+          "taxable": true,
+          "available": true,
+          "price": "535.00",
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8001234560004
+        }
+      ],
+      "options": [{ "name": "Title", "position": 1, "values": ["Default Title"] }]
+    }
+  ]
+}

@@ -162,3 +162,18 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Verified (LIVE, local):** `refresh --live --supplier homecenter` → **250 real products, nullPriceRate 0, status=success, promoted=true** in <1s. Cross-supplier match: free-text `"סרט אלומיניום"` → HC product `₪79.9` (`needs_review`). Promotes under `homecenter` (no collision with `demo`/`ace`).
 - **Commit:** `f88f02f` (adapter); `f489490` (review fix — registration only in index.ts).
 - **Status:** ✅ done (live-proven). Notes: single-page feed (250) for now; broader coverage = sitemap product URLs or category collections (future).
+
+---
+
+## Additive — suppliers (Home Rey Binyan)
+
+### [2026-06-01] Add Home Rey Binyan (הראל ועידן הכל לבניין) Shopify adapter — HTTP, no browser  (agent: claude-code/opus)
+- **Task:** add another live-priced חומרי בניין supplier; expand coverage, reusing the proven Home Center Shopify pattern.
+- **Recon:** `homreybinyan.co.il` is **Shopify** (store name from `<title>`: "הראל ועידן הכל לבניין | חנות חומרי בניין בחולון"). `/products.json?limit=250` returns 250 products with real ₪ prices over **plain HTTP — no browser**, structurally identical to Home Center. This store leaves `product_type` and variant `sku` empty, so the generic parser correctly falls back to the product `handle` for sku and omits `categoryPath` — no parser change needed.
+- **Paths:** `packages/scraper-adapters/src/homreybinyan/{adapter.ts,adapter.test.ts,__fixtures__/products.json}`; `packages/scraper-adapters/src/index.ts` (register + export); `apps/worker/src/context.ts` (fixture map). Decision: **reused** `parseShopifyProducts` via read-only import from `../homecenter/shopify.js` (simpler, lower-risk than extracting a shared module); Home Center files unchanged.
+- **Public API:** `homreybinyanAdapter` (supplierKey `homreybinyan`, supplierName `הראל ועידן הכל לבניין`, baseUrl `https://homreybinyan.co.il`); registered via `registerHomreybinyanAdapter()` inside `registerAllAdapters()`. Runs with `--live` (HTTP); no `--browser`.
+- **Approach:** one synthetic category over `/products.json?limit=250` (single page — `?page=` robots-disallowed). Parse `products[].{title, variants[0].{sku,price}, handle, product_type}` → RawProduct (`priceRaw` `₪<price>`, sku = variant sku or handle, url = `/products/<handle>`).
+- **Tests:** scraper-adapters +2 (adapter: single-category listing + scrape stamps region/parses 4-product fixture, asserts name/price ₪75.00/handle-as-sku/url). New test failing→passing TDD; full scraper-adapters suite **26 passing**, typecheck clean. Worker typecheck clean.
+- **Verified (LIVE, local):** `refresh --live --supplier homreybinyan --region center` → **250 real products, errorCount 0, nullPriceRate 0, status=success, promoted=true** in <1s (confirmed both with and without robots respected). Offline `--fixtures` path → 4 products, success, promoted=true. Promotes under `homreybinyan` (no collision with `demo`/`ace`/`homecenter`).
+- **Commit:** _(this commit)_.
+- **Status:** ✅ done (live-proven, 250 priced products). Notes: single-page feed (250) for now; this store has empty product_type/sku (handle used as sku); broader coverage = future.
