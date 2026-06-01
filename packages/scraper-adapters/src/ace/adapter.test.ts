@@ -43,3 +43,29 @@ describe("aceAdapter", () => {
     expect(products.map((p) => p.sku)).toContain("1701065");
   });
 });
+
+/** Stub context that serves the given html for every fetch and records URLs. */
+function ctxReturning(html: string): ScraperContext & { urls: string[] } {
+  const urls: string[] = [];
+  return {
+    urls,
+    region: "center",
+    log: () => {},
+    fetchText: async (u: string) => {
+      urls.push(u);
+      return html;
+    },
+  };
+}
+
+describe("aceAdapter.searchProducts", () => {
+  it("queries catalogsearch and yields parsed products from the first page", async () => {
+    const ctx = ctxReturning(fixture("category-listing.html"));
+    const out: RawProduct[] = [];
+    for await (const p of aceAdapter.searchProducts!("מלט", ctx)) out.push(p);
+    expect(out.length).toBeGreaterThan(0);
+    expect(ctx.urls[0]).toContain("catalogsearch/result/?q=");
+    expect(ctx.urls[0]).toContain(encodeURIComponent("מלט"));
+    expect(out[0]!.region).toBe("center");
+  });
+});

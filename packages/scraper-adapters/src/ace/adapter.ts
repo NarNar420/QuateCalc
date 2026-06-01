@@ -61,4 +61,17 @@ export const aceAdapter: ScraperAdapter = {
       pageUrl = parseNextPageUrl(html, { baseUrl: BASE_URL });
     }
   },
+
+  async *searchProducts(query: string, ctx: ScraperContext): AsyncIterable<RawProduct> {
+    const url = `${BASE_URL}/catalogsearch/result/?q=${encodeURIComponent(query)}`;
+    ctx.log("info", `ace: search "${query}"`);
+    const html = await ctx.fetchText(url);
+    const products = parseProducts(html, {
+      baseUrl: BASE_URL,
+      categoryPath: ["חיפוש"],
+    });
+    for (const product of products) {
+      yield { ...product, region: ctx.region };
+    }
+  },
 };
