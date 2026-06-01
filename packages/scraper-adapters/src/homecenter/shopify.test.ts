@@ -44,19 +44,30 @@ const searchFixture = readFileSync(
 );
 
 describe("parseShopifySearch", () => {
-  it("parses priced predictive-search products and skips price-less ones", () => {
-    const out = parseShopifySearch(searchFixture, { baseUrl: "https://www.homecenter.co.il" });
+  const BASE = "https://www.homecenter.co.il";
+
+  it("filters the products.json feed by query, keeping priced matches only", () => {
+    // Query "צבע" (paint) matches 2 priced products; the price-less paint is
+    // dropped by parseShopifyProducts and the brush ("מברשת") doesn't match.
+    const out = parseShopifySearch(searchFixture, { baseUrl: BASE }, "צבע");
     expect(out).toHaveLength(2);
     expect(out[0]).toMatchObject({
-      name: 'מלט אפור 25 ק"ג',
+      name: "צבע אקרילי לבן 5 ליטר",
       priceRaw: "₪19.90",
-      url: "https://www.homecenter.co.il/products/melet-afor-25kg",
-      sku: "melet-afor-25kg",
+      url: "https://www.homecenter.co.il/products/tzeva-akrili-lavan-5l",
+      sku: "tzeva-akrili-lavan-5l",
     });
-    expect(out[1]!.priceRaw).toBe("24.50");
+    expect(out[1]?.priceRaw).toBe("₪24.50");
+    expect(out.every((p) => p.name.includes("צבע"))).toBe(true);
+  });
+
+  it("requires every query token to appear in the name", () => {
+    const out = parseShopifySearch(searchFixture, { baseUrl: BASE }, "צבע אפור");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.name).toBe("צבע יסוד אפור 1 ליטר");
   });
 
   it("returns [] on malformed JSON", () => {
-    expect(parseShopifySearch("not json", { baseUrl: "https://x.test" })).toEqual([]);
+    expect(parseShopifySearch("not json", { baseUrl: "https://x.test" }, "צבע")).toEqual([]);
   });
 });

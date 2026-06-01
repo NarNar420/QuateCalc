@@ -162,3 +162,17 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Verified (LIVE, local):** `refresh --live --supplier homecenter` → **250 real products, nullPriceRate 0, status=success, promoted=true** in <1s. Cross-supplier match: free-text `"סרט אלומיניום"` → HC product `₪79.9` (`needs_review`). Promotes under `homecenter` (no collision with `demo`/`ace`).
 - **Commit:** `f88f02f` (adapter); `f489490` (review fix — registration only in index.ts).
 - **Status:** ✅ done (live-proven). Notes: single-page feed (250) for now; broader coverage = sitemap product URLs or category collections (future).
+
+---
+
+## Sub-project 1 — On-demand live search engine
+
+### [2026-06-01] On-demand searchProducts + runSearch + ephemeral scanned rows  (agent: claude-code/opus)
+- **Task:** add live supplier search (on-demand) feeding ephemeral matchable catalog rows.
+- **Paths:** `packages/contracts` (searchProducts), `packages/scraper-core` (runSearch), `packages/scraper-adapters/src/{homecenter,ace}` (searchProducts + Shopify suggest parser), `packages/db` (scanned status + expiresAt + insert/prune + statuses), `packages/matching` (statuses passthrough), `apps/worker` (--search proof harness).
+- **Public API:** `ScraperAdapter.searchProducts?()`; `runSearch`/`RunSearchParams`/`SearchResult`; `insertScannedProducts`, `pruneExpiredScanned`; `searchCatalogByTrigram({ statuses })`; `matchLines(_, { statuses })`.
+- **Tests:** ~132 passing (full repo) — on-demand-related: runSearch engine 4 (cap/empty/health), Shopify search/filter parser 3, ACE catalogsearch yield 1, db scanned insert/search/prune integration 1 (run via `pnpm --filter @quatecalc/db exec vitest`, as the `-r` db script is `echo`).
+- **Verified (LIVE, local):** `refresh --live --supplier homecenter --region center --search "צבע"` → searched **8** priced products, **inserted 8 scanned rows**, matched the query to a Home Center product **@ ₪49.90** (`needs_review`, 2 candidates). Rows pruned after (scannedAfter=0).
+- **Recon (Shopify shape):** the predictive endpoint `/search/suggest.json` is **locale-gated on this store** — returns HTTP **417 "Unsupported buyer locale"** regardless of params/cookies/Accept-Language. Reconciled `homecenter.searchProducts` to search the **proven `/products.json` feed** and filter client-side by title token(s) (reusing `parseShopifyProducts`); `parseShopifySearch(json, ctx, query)` now filters that feed. Fixture + parser tests updated to the products.json shape (3 priced + 1 price-less; query "צבע"). NB: "מלט" isn't in the 250-product feed page, so the proof used "צבע" (paint), which is.
+- **Commit:** `ea844b4`.
+- **Status:** ✅ done (engine live-proven). Async scan jobs + web UX = sub-project 2.

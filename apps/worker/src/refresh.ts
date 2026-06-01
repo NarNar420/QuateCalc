@@ -19,8 +19,10 @@
  * The runner's health gate guarantees a broken scrape never wipes a good catalog.
  */
 import { RegionSchema, type CategoryRef, type ScraperContext, type ScrapeRegion } from "@quatecalc/contracts";
-import { getAdapter, runScrape } from "@quatecalc/scraper-core";
+import { getAdapter, runScrape, runSearch } from "@quatecalc/scraper-core";
 import { createAceSitemapAdapter, registerAllAdapters } from "@quatecalc/scraper-adapters";
+import { insertScannedProducts, upsertSupplier } from "@quatecalc/db";
+import { matchLines } from "@quatecalc/matching";
 import { fixtureContextBuilder, liveContextBuilder } from "./context.js";
 
 interface Args {
@@ -32,6 +34,7 @@ interface Args {
   category?: string;
   sitemap: boolean;
   maxProducts?: number;
+  search?: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -44,6 +47,7 @@ function parseArgs(argv: string[]): Args {
   let category: string | undefined;
   let sitemap = false;
   let maxProducts: number | undefined;
+  let search: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -56,8 +60,9 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--category") category = argv[++i];
     else if (a === "--sitemap") sitemap = true;
     else if (a === "--max-products") maxProducts = Number(argv[++i]);
+    else if (a === "--search") search = argv[++i];
   }
-  return { supplier, region: RegionSchema.parse(region), live, browser, proxy, category, sitemap, maxProducts };
+  return { supplier, region: RegionSchema.parse(region), live, browser, proxy, category, sitemap, maxProducts, search };
 }
 
 async function main() {
@@ -73,6 +78,43 @@ async function main() {
   }
 
   registerAllAdapters();
+
+  // On-demand live search proof harness: --search <query> runs the adapter's
+  // searchProducts, persists ephemeral `scanned` rows, and matches the query
+  // against them. Home Center needs only HTTP (no --browser).
+  if (args.search) {
+    const adapter = getAdapter(args.supplier);
+    if (!adapter) {
+      console.error(`Unknown supplier "${args.supplier}". Did you register its adapter?`);
+      process.exit(1);
+    }
+    const supplier = await upsertSupplier({
+      key: adapter.supplierKey,
+      name: adapter.supplierName,
+      baseUrl: adapter.baseUrl,
+    });
+    const ctx = liveContextBuilder()(args.region);
+    console.log(
+      `Searching "${adapter.supplierKey}" region=${args.region} query="${args.search}"...`,
+    );
+
+    const result = await runSearch({ adapter, query: args.search, ctx, supplierId: supplier.id });
+    const inserted = await insertScannedProducts(
+      result.products,
+      new Date(Date.now() + 2 * 60 * 60 * 1000),
+    );
+    const items = await matchLines(
+      [{ id: "search", rawText: args.search, quantity: 1 }],
+      { region: args.region, statuses: ["scanned"] },
+    );
+
+    console.log("\n=== Search summary ===");
+    console.log(JSON.stringify(result.summary, null, 2));
+    console.log(`\nInserted ${inserted} scanned rows.`);
+    console.log("\n=== Match ===");
+    console.log(JSON.stringify(items, null, 2));
+    return;
+  }
 
   const adapter = args.sitemap
     ? createAceSitemapAdapter({ maxProducts: args.maxProducts })

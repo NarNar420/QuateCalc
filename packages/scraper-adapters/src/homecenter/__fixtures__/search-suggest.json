@@ -1,26 +1,28 @@
 {
-  "resources": {
-    "results": {
-      "products": [
-        {
-          "title": "מלט אפור 25 ק\"ג",
-          "handle": "melet-afor-25kg",
-          "url": "/products/melet-afor-25kg",
-          "price": "₪19.90"
-        },
-        {
-          "title": "שק מלט לבן",
-          "handle": "melet-lavan",
-          "url": "/products/melet-lavan",
-          "price": "24.50"
-        },
-        {
-          "title": "מוצר ללא מחיר",
-          "handle": "no-price",
-          "url": "/products/no-price",
-          "price": ""
-        }
-      ]
+  "products": [
+    {
+      "title": "צבע אקרילי לבן 5 ליטר",
+      "handle": "tzeva-akrili-lavan-5l",
+      "product_type": "צבעים",
+      "variants": [{ "sku": "tzeva-akrili-lavan-5l", "price": "19.90" }]
+    },
+    {
+      "title": "צבע יסוד אפור 1 ליטר",
+      "handle": "tzeva-yesod-afor-1l",
+      "product_type": "צבעים",
+      "variants": [{ "sku": "tzeva-yesod-afor-1l", "price": "24.50" }]
+    },
+    {
+      "title": "צבע ללא מחיר",
+      "handle": "tzeva-no-price",
+      "product_type": "צבעים",
+      "variants": [{ "sku": "tzeva-no-price" }]
+    },
+    {
+      "title": "מברשת לצביעה 4 אינץ",
+      "handle": "mivreshet-4",
+      "product_type": "כלי צביעה",
+      "variants": [{ "sku": "mivreshet-4", "price": "12.00" }]
     }
-  }
+  ]
 }

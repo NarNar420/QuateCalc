@@ -29,12 +29,12 @@ export const homecenterAdapter: ScraperAdapter = {
   },
 
   async *searchProducts(query: string, ctx: ScraperContext): AsyncIterable<RawProduct> {
-    const url =
-      `${BASE_URL}/search/suggest.json?q=${encodeURIComponent(query)}` +
-      `&resources[type]=product&resources[limit]=10`;
-    ctx.log("info", `homecenter: search "${query}"`);
-    const json = await ctx.fetchText(url);
-    for (const product of parseShopifySearch(json, { baseUrl: BASE_URL })) {
+    // The predictive-search endpoint (/search/suggest.json) is locale-gated on
+    // this store (HTTP 417 "Unsupported buyer locale"); search the proven
+    // products.json feed and filter client-side by title.
+    ctx.log("info", `homecenter: search "${query}" over products.json`);
+    const json = await ctx.fetchText(PRODUCTS_URL);
+    for (const product of parseShopifySearch(json, { baseUrl: BASE_URL }, query)) {
       yield { ...product, region: ctx.region };
     }
   },
