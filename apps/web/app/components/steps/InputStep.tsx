@@ -8,6 +8,7 @@ import {
   type Region,
   type Unit,
 } from "@quatecalc/contracts";
+import type { ScanJobView } from "@quatecalc/contracts";
 import { useState } from "react";
 import { parseMaterials } from "../../lib/parseMaterials";
 import type { PricedLine } from "../types";
@@ -52,6 +53,7 @@ export function InputStep({
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<Record<string, string>>({});
 
   const parsed = parseMaterials(text);
 
@@ -62,20 +64,35 @@ export function InputStep({
       return;
     }
     setLoading(true);
+    setProgress({});
     try {
-      const res = await fetch("/api/match", {
+      const start = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lines: parsed, region }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "ההתאמה נכשלה.");
+      if (!start.ok) {
+        const b = await start.json().catch(() => ({}));
+        throw new Error(b.error ?? "הסריקה נכשלה.");
       }
-      const data: { items: MatchedLineItem[] } = await res.json();
-      onMatched(data.items.map(toPricedLine));
+      const { jobId } = (await start.json()) as { jobId: string };
+
+      const deadline = Date.now() + 90_000;
+      for (;;) {
+        if (Date.now() > deadline) throw new Error("הסריקה ארכה זמן רב מדי. נסו שוב.");
+        await new Promise((r) => setTimeout(r, 1500));
+        const res = await fetch(`/api/scan/${jobId}`);
+        if (!res.ok) throw new Error("שגיאה בקבלת מצב הסריקה.");
+        const view: ScanJobView = await res.json();
+        setProgress(view.progress.perSupplier);
+        if (view.status === "complete" && view.items) {
+          onMatched(view.items.map(toPricedLine));
+          return;
+        }
+        if (view.status === "failed") throw new Error(view.error ?? "הסריקה נכשלה.");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ההתאמה נכשלה.");
+      setError(err instanceof Error ? err.message : "הסריקה נכשלה.");
     } finally {
       setLoading(false);
     }
@@ -116,6 +133,16 @@ export function InputStep({
         </p>
       </div>
 
+      {loading && Object.keys(progress).length > 0 && (
+        <ul className="scan-progress" aria-live="polite">
+          {Object.entries(progress).map(([supplier, state]) => (
+            <li key={supplier}>
+              {supplier}: {state === "done" ? "✓" : state === "error" ? "⚠" : state === "running" ? "סורק…" : "ממתין"}
+            </li>
+          ))}
+        </ul>
+      )}
+
       <div className="actions">
         <button
           type="button"
@@ -131,7 +158,7 @@ export function InputStep({
           disabled={loading || parsed.length === 0}
         >
           {loading ? <span className="spinner" /> : null}
-          {loading ? "מתאים..." : "התאמת מוצרים →"}
+          {loading ? "סורק..." : "התאמת מוצרים →"}
         </button>
       </div>
     </section>
