@@ -27,8 +27,16 @@ export async function searchCatalogByTrigram(params: {
   region: Region;
   limit?: number;
   minSimilarity?: number;
+  /** Catalog statuses to search. Defaults to ['current']. */
+  statuses?: CatalogStatus[];
 }): Promise<ProductSearchRow[]> {
-  const { normalizedQuery, region, limit = 10, minSimilarity = 0.1 } = params;
+  const {
+    normalizedQuery,
+    region,
+    limit = 10,
+    minSimilarity = 0.1,
+    statuses = ["current"],
+  } = params;
   if (!normalizedQuery.trim()) return [];
 
   // similarity() comes from the pg_trgm extension.
@@ -37,7 +45,7 @@ export async function searchCatalogByTrigram(params: {
            price, currency, region, url, "scrapedAt",
            similarity("nameNormalized", ${normalizedQuery}) AS similarity
     FROM "CatalogProduct"
-    WHERE status = 'current'::"CatalogStatus"
+    WHERE status::text = ANY(${statuses})
       AND region = ${region}::"Region"
       AND similarity("nameNormalized", ${normalizedQuery}) >= ${minSimilarity}
     ORDER BY similarity DESC
@@ -94,6 +102,30 @@ export async function promoteScrapeRun(params: {
 export async function discardStagedRun(scrapeRunId: string): Promise<number> {
   const res = await prisma.catalogProduct.deleteMany({
     where: { status: "staged", scrapeRunId },
+  });
+  return res.count;
+}
+
+/** Bulk-insert on-demand scan results as ephemeral `scanned` rows with a TTL. */
+export async function insertScannedProducts(
+  rows: StagedProductInput[],
+  expiresAt: Date,
+): Promise<number> {
+  if (rows.length === 0) return 0;
+  const res = await prisma.catalogProduct.createMany({
+    data: rows.map((r) => ({
+      ...r,
+      status: "scanned" as CatalogStatus,
+      expiresAt,
+    })),
+  });
+  return res.count;
+}
+
+/** Delete expired `scanned` rows. Returns the number removed. */
+export async function pruneExpiredScanned(now: Date = new Date()): Promise<number> {
+  const res = await prisma.catalogProduct.deleteMany({
+    where: { status: "scanned", expiresAt: { lt: now } },
   });
   return res.count;
 }
