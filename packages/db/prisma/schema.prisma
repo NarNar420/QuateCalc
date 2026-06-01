@@ -56,6 +56,14 @@ enum MatchStatus {
   no_match
 }
 
+enum ScanJobStatus {
+  pending
+  scanning
+  matching
+  complete
+  failed
+}
+
 model Supplier {
   id       String  @id @default(cuid())
   key      String  @unique
@@ -152,6 +160,24 @@ model QuoteLine {
   matchedProductId String?
   matchStatus      MatchStatus?
   order            Int          @default(0)
+}
+
+model ScanJob {
+  id         String        @id @default(cuid())
+  region     Region
+  // MaterialLine[] submitted by the client, as JSON.
+  lines      Json
+  status     ScanJobStatus @default(pending)
+  // { perSupplier: { <key>: "pending"|"running"|"done"|"error" } }
+  progress   Json          @default("{}")
+  // MatchedLineItem[] once matched, as JSON.
+  result     Json?
+  error      String?
+  createdAt  DateTime      @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  @@index([status, createdAt])
 }
 
 // Learned user corrections: normalized free-text -> chosen product.
