@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseShopifyProducts } from "./shopify.js";
+import { parseShopifyProducts, parseShopifySearch } from "./shopify.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): string => readFileSync(join(here, "__fixtures__", name), "utf8");
@@ -35,5 +35,28 @@ describe("parseShopifyProducts", () => {
     const out = parseShopifyProducts(json, { baseUrl: BASE });
     expect(out).toHaveLength(1);
     expect(out[0]?.sku).toBe("s2");
+  });
+});
+
+const searchFixture = readFileSync(
+  fileURLToPath(new URL("./__fixtures__/search-suggest.json", import.meta.url)),
+  "utf8",
+);
+
+describe("parseShopifySearch", () => {
+  it("parses priced predictive-search products and skips price-less ones", () => {
+    const out = parseShopifySearch(searchFixture, { baseUrl: "https://www.homecenter.co.il" });
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({
+      name: 'מלט אפור 25 ק"ג',
+      priceRaw: "₪19.90",
+      url: "https://www.homecenter.co.il/products/melet-afor-25kg",
+      sku: "melet-afor-25kg",
+    });
+    expect(out[1]!.priceRaw).toBe("24.50");
+  });
+
+  it("returns [] on malformed JSON", () => {
+    expect(parseShopifySearch("not json", { baseUrl: "https://x.test" })).toEqual([]);
   });
 });

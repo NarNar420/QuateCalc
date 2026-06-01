@@ -1,0 +1,26 @@
+{
+  "resources": {
+    "results": {
+      "products": [
+        {
+          "title": "מלט אפור 25 ק\"ג",
+          "handle": "melet-afor-25kg",
+          "url": "/products/melet-afor-25kg",
+          "price": "₪19.90"
+        },
+        {
+          "title": "שק מלט לבן",
+          "handle": "melet-lavan",
+          "url": "/products/melet-lavan",
+          "price": "24.50"
+        },
+        {
+          "title": "מוצר ללא מחיר",
+          "handle": "no-price",
+          "url": "/products/no-price",
+          "price": ""
+        }
+      ]
+    }
+  }
+}

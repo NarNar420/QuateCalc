@@ -44,3 +44,41 @@ export function parseShopifyProducts(jsonText: string, ctx: ShopifyParseContext)
   }
   return out;
 }
+
+interface ShopifySearchProduct {
+  title?: string;
+  handle?: string;
+  url?: string;
+  price?: string;
+}
+
+/**
+ * Parse a Shopify predictive-search payload (`/search/suggest.json`,
+ * `resources.results.products[]`) into RawProducts. Uses title, the (possibly
+ * relative) product url, and the formatted price string (parsed downstream by
+ * parsePrice). Entries missing a title, price, or url are skipped.
+ */
+export function parseShopifySearch(jsonText: string, ctx: ShopifyParseContext): RawProduct[] {
+  let data: { resources?: { results?: { products?: ShopifySearchProduct[] } } };
+  try {
+    data = JSON.parse(jsonText);
+  } catch {
+    return [];
+  }
+  const products = data.resources?.results?.products ?? [];
+  const out: RawProduct[] = [];
+  for (const p of products) {
+    const name = p.title?.trim();
+    const price = p.price?.trim();
+    const path = p.url?.trim();
+    if (!name || !price || !path) continue;
+    const url = path.startsWith("http") ? path : `${ctx.baseUrl}${path}`;
+    out.push({
+      name,
+      priceRaw: price,
+      sku: p.handle?.trim() || undefined,
+      url,
+    });
+  }
+  return out;
+}
