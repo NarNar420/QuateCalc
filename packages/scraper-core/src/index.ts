@@ -43,3 +43,6 @@ export {
   type RunnerDeps,
   type RunScrapeOptions,
 } from "./runner.js";
+
+export { runSearch } from "./runSearch.js";
+export type { RunSearchParams, SearchResult } from "./runSearch.js";
