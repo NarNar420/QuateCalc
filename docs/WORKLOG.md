@@ -197,3 +197,24 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
   - **Sinai** ⚠️ **LIVE pending — anti-bot block.** Site returns **HTTP 403 to the polite bot UA** (`QuateCalcBot/...`) while a browser UA gets 200; `--live --browser` (headless Chromium) also 403'd. Adapter+selectors proven correct via `--fixtures` → **3 products** (subcategory tile correctly skipped), nullPriceRate 0, promoted=true. Needs a non-headless / stealth browser or scraping-API transport, or a whitelisted UA arrangement — future work. (The mangled `07%9b…` in the error string is only a `console.log` `%d` format artifact; the fetched URL is correct.)
 - **Commit:** _(this commit)_.
 - **Status:** ✅ done for Vaknin + Bniyah (live-proven); ⚠️ Sinai live blocked by 403 anti-bot (adapter verified offline, awaiting browser/stealth transport). Notes: seeds are minimal (1–2 categories/store) — full category discovery is future work.
+
+---
+
+## Additive — suppliers (generic Konimbo: D-House, Netanel)
+
+### [2026-06-01] Add generic Konimbo adapter — 2 static-HTML stores (D-House, Netanel)  (agent: claude-code/opus)
+- **Task:** add two Israeli building/houseware shops on the **Konimbo** SaaS platform (recon-verified static-HTML, ₪ prices) via ONE generic, theme-tolerant adapter: D-House / דוקטור האוס and Netanel Tools / נתנאל לבניין.
+- **Recon (real HTML, 2026-06-01):** both stores share the same Konimbo card markup; only the name/price *tag* differs, so tolerant class selectors cover both:
+  - **Card:** `div.layout_list_item.item` (carries `id="item_id_<n>"`, `data-category-title`).
+  - **Product URL:** the card repeats the link in image/title/price anchors; first `<a href>` containing `/items/<id>-<slug>`. **Hrefs carry leading whitespace + a trailing newline** (`'  /items/...\n'`) → parser trims before `new URL()`.
+  - **Name:** `.title` — `<h3 class="title">` on **Netanel**, `<p class="title">` on **D-House**.
+  - **Price:** `.price` — `<span class="price">` on **Netanel**, `<p class="price">` on **D-House**; contains a hidden `.items_show_price_text` ("מחיר") label and a sibling struck-through `.origin_price.line-through` old price. Parser clones `.price`, removes both, leaving e.g. `89 ₪`.
+  - **Pagination:** clean absolute `<link rel="next">` in `<head>` (selector also accepts `a[rel="next"]`); absent on the last page.
+- **Paths (one new folder):** `packages/scraper-adapters/src/konimbo/{selectors,parse,adapter}.ts` (+ `parse.test.ts`, `adapter.test.ts`, `__fixtures__/{dhouse,netanel}-listing.html` — trimmed real markup, 3 cards each + `<link rel=next>` + pagination block); `packages/scraper-adapters/src/index.ts` (register + export); `apps/worker/src/context.ts` (fixture map for `dhouse`/`netanel`).
+- **Public API:** `createKonimboAdapter({ supplierKey, supplierName, baseUrl, categories })` factory; instantiated `dhouseAdapter` (key `dhouse`, name `דוקטור האוס`, `https://www.d-house.co.il`) + `netanelAdapter` (key `netanel`, name `נתנאל לבניין`, `https://www.netaneltools.co.il`); `parseKonimboProducts(html, ctx)`, `parseKonimboNextPage(html, ctx)`, `KONIMBO_SELECTORS`; registered via `registerKonimboAdapters()` inside `registerAllAdapters()`. Paginates `<link rel="next">`, capped `MAX_PAGES=60`, self-link guarded (like WooCommerce/ACE). Runs `--live` (HTTP); no browser.
+- **Tests:** scraper-adapters +11 (parse 7: per-store name/price/url incl. Netanel `h3.title`/`span.price` → `שאבי שיק צבע לבן`/`89 ₪`, D-House `p.title`/`p.price` → `שפכטל נירוסטה גמיש 2 צול`/`16 ₪` with hidden "מחיר" label stripped, absolute `/items/` url resolution from whitespace-padded hrefs, both next-page urls, empty-page + no-next + skip-incomplete-card; adapter 4: factory yields over fake ctx + stamps region, pagination stop, distinct keys/names/baseUrls, each store seeds ≥1 category). New tests failing→passing TDD. **Full suite 50 passing, 13 files**; scraper-adapters typecheck clean; worker typecheck clean.
+- **Verified (LIVE, local Postgres, crawl-delay 10 respected via ctx.fetchText):**
+  - **D-House** `refresh --live --supplier dhouse --region center` (2 seeded categories) → **288 products, errorCount 0, nullPriceRate 0, status=success, promoted=true** (~66s with crawl-delay).
+  - **Netanel** `refresh --live --supplier netanel --region center` (3 seeded categories) → **631 products, errorCount 0, nullPriceRate 0, status=success, promoted=true** (~140s with crawl-delay).
+- **Commit:** _(this commit)_.
+- **Status:** ✅ done (both stores live-proven, 0% null prices). Notes: seeds are minimal (2–3 categories/store) — full category discovery (e.g. via sitemap) is future work; node_modules junctioned from main for verify and torn down afterward (worktree clean, main intact).

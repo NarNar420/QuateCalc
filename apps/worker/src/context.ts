@@ -96,6 +96,22 @@ const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, strin
         "sinai-listing.html",
     },
   },
+  dhouse: {
+    dir: "packages/scraper-adapters/src/konimbo/__fixtures__",
+    map: {
+      "/349794-%D7%9B%D7%9C%D7%99-%D7%A2%D7%91%D7%95%D7%93%D7%94": "dhouse-listing.html",
+      "/420409-%D7%97%D7%A9%D7%9E%D7%9C": "dhouse-listing.html",
+    },
+  },
+  netanel: {
+    dir: "packages/scraper-adapters/src/konimbo/__fixtures__",
+    map: {
+      "/349438-%D7%A6%D7%91%D7%A2": "netanel-listing.html",
+      "/349845-%D7%9B%D7%9C%D7%99%D7%9D-%D7%97%D7%A8%D7%A9%D7%9E%D7%9C%D7%99%D7%99%D7%9D":
+        "netanel-listing.html",
+      "/422654-%D7%9B%D7%9C%D7%99-%D7%A2%D7%91%D7%95%D7%93%D7%94": "netanel-listing.html",
+    },
+  },
 };
 
 function repoRoot(): string {
