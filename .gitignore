@@ -39,3 +39,6 @@ playwright-report/
 # scraper output artifacts
 /tmp-scrape/
 exports/
+
+# graphify generated output
+graphify-out/
