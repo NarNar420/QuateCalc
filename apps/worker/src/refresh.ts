@@ -21,8 +21,7 @@
 import { RegionSchema, type CategoryRef, type ScraperContext, type ScrapeRegion } from "@quatecalc/contracts";
 import { getAdapter, runScrape, runSearch } from "@quatecalc/scraper-core";
 import { createAceSitemapAdapter, registerAllAdapters } from "@quatecalc/scraper-adapters";
-import { insertScannedProducts, upsertSupplier } from "@quatecalc/db";
-import { matchLines } from "@quatecalc/matching";
+import { insertScannedProducts, searchCatalogByTrigram, upsertSupplier } from "@quatecalc/db";
 import { fixtureContextBuilder, liveContextBuilder } from "./context.js";
 
 interface Args {
@@ -80,8 +79,11 @@ async function main() {
   registerAllAdapters();
 
   // On-demand live search proof harness: --search <query> runs the adapter's
-  // searchProducts, persists ephemeral `scanned` rows, and matches the query
-  // against them. Home Center needs only HTTP (no --browser).
+  // searchProducts, persists ephemeral `scanned` rows, and confirms they are
+  // searchable via the scanned-scoped trigram search. Home Center needs only
+  // HTTP (no --browser). Full matchLines scoring over scanned rows is exercised
+  // by the matching package + the db scanned integration test; this harness
+  // stays dep-minimal (no @quatecalc/matching edge) and proves live acquisition.
   if (args.search) {
     const adapter = getAdapter(args.supplier);
     if (!adapter) {
@@ -103,16 +105,22 @@ async function main() {
       result.products,
       new Date(Date.now() + 2 * 60 * 60 * 1000),
     );
-    const items = await matchLines(
-      [{ id: "search", rawText: args.search, quantity: 1 }],
-      { region: args.region, statuses: ["scanned"] },
-    );
+    // Search the freshly-inserted ephemeral rows. The query is passed as-is;
+    // proper Hebrew normalization is the web/match layer's job (matchLines),
+    // which is fine here since typed search terms rarely carry niqqud.
+    const rows = await searchCatalogByTrigram({
+      normalizedQuery: args.search,
+      region: args.region,
+      statuses: ["scanned"],
+    });
 
     console.log("\n=== Search summary ===");
     console.log(JSON.stringify(result.summary, null, 2));
     console.log(`\nInserted ${inserted} scanned rows.`);
-    console.log("\n=== Match ===");
-    console.log(JSON.stringify(items, null, 2));
+    console.log(`\n=== Scanned-row matches (${rows.length}) ===`);
+    for (const r of rows.slice(0, 5)) {
+      console.log(`  ${r.name} @ ₪${r.price} (similarity ${r.similarity.toFixed(2)})`);
+    }
     return;
   }
 

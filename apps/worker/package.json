@@ -12,7 +12,6 @@
   "dependencies": {
     "@quatecalc/contracts": "workspace:*",
     "@quatecalc/db": "workspace:*",
-    "@quatecalc/matching": "workspace:*",
     "@quatecalc/scraper-adapters": "workspace:*",
     "@quatecalc/scraper-browser": "workspace:*",
     "@quatecalc/scraper-core": "workspace:*"
