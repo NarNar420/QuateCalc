@@ -8,6 +8,7 @@ import {
   type Region,
 } from "@quatecalc/contracts";
 import {
+  type CatalogStatus,
   getOverrides,
   getProductsByIds,
   searchCatalogByTrigram,
@@ -24,6 +25,8 @@ export interface MatchOptions {
   floor?: number;
   /** Max trigram candidates to fetch per line. */
   limit?: number;
+  /** Catalog statuses to search. Defaults to ['current']; on-demand passes ['scanned']. */
+  statuses?: CatalogStatus[];
 }
 
 /**
@@ -88,6 +91,7 @@ export async function matchLines(
         normalizedQuery: queryNorm,
         region: opts.region,
         limit,
+        statuses: opts.statuses,
       });
       candidates = rows
         .map((row) => ({
