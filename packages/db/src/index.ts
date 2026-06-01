@@ -18,3 +18,4 @@ export * from "./repositories/products.js";
 export * from "./repositories/scrapeRuns.js";
 export * from "./repositories/overrides.js";
 export * from "./repositories/quotes.js";
+export * from "./repositories/scanJobs.js";
