@@ -54,6 +54,13 @@ export interface ScraperAdapter {
    * RawProduct objects and handle their own pagination using ctx.fetchText.
    */
   scrapeCategory(category: CategoryRef, ctx: ScraperContext): AsyncIterable<RawProduct>;
+
+  /**
+   * Search the supplier's own product search for `query` and stream matching
+   * products. Optional: adapters whose supplier has no usable product search
+   * omit this — the on-demand search engine skips them.
+   */
+  searchProducts?(query: string, ctx: ScraperContext): AsyncIterable<RawProduct>;
 }
 
 /** Outcome status of a single scrape run. */
