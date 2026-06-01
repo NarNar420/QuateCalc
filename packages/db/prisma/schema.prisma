@@ -47,6 +47,7 @@ enum CatalogStatus {
   staged
   current
   archived
+  scanned
 }
 
 enum MatchStatus {
@@ -87,12 +88,15 @@ model CatalogProduct {
   scrapedAt      DateTime
   scrapeRun      ScrapeRun?    @relation(fields: [scrapeRunId], references: [id], onDelete: SetNull)
   scrapeRunId    String?
+  /** For ephemeral on-demand `scanned` rows: when this row may be pruned. Null for staged/current/archived. */
+  expiresAt      DateTime?
 
   createdAt DateTime @default(now())
 
   // pg_trgm GIN index on nameNormalized is added via raw SQL migration.
   @@index([supplierKey, region, status])
   @@index([nameNormalized])
+  @@index([status, expiresAt])
 }
 
 model ScrapeRun {
