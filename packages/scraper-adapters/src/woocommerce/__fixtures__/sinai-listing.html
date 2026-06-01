@@ -1,0 +1,49 @@
+<!--
+  TRIMMED real fixture captured from
+  https://www.sinaistore.com/product-category/כלי-עבודה-חשמליים/ (2026-06-01).
+  USES (Impreza) WooCommerce theme: product card = <article class="w-grid-item ... product type-product ...">,
+  name+url in <... class="... woocommerce-loop-product__title ..."><a href="/product/...">,
+  price wrapper = <p class="w-post-elm product_field price ...">. Sale products use the
+  standard WooCommerce <del> (old) + <ins> (current) — the parser takes the <ins>
+  amount as the current price, otherwise the amount not inside <del>.
+  NOTE: subcategory tiles on this page reuse woocommerce-loop-product__title but link
+  to /product-category/ and live OUTSIDE article.product — they must NOT be scraped.
+  Trimmed to 1 sale card + 2 regular cards + a.next.page-numbers, plus one subcategory
+  tile to prove it is skipped.
+-->
+<html lang="he-IL" dir="rtl">
+<body>
+<div class="w-grid">
+	<!-- subcategory tile: NOT a product (no article.product wrapper); must be skipped -->
+	<div class="w-grid-item">
+		<h2 class="w-post-elm post_title woocommerce-loop-product__title color_link_inherit"><a href="https://www.sinaistore.com/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%99%d7%9d/%d7%90%d7%91%d7%99%d7%96%d7%a8%d7%99%d7%9d/">אביזרים לכלי עבודה חשמליים</a></h2>
+	</div>
+
+	<article class="w-grid-item size_1x1 post-4398 product type-product status-publish has-post-thumbnail product_cat-2397 instock sale shipping-taxable purchasable product-type-simple" data-id="4398">
+		<div class="w-grid-item-inner">
+			<h2 class="w-post-elm post_title usg_post_title_1 align_center woocommerce-loop-product__title color_link_inherit"><a href="https://www.sinaistore.com/product/%d7%9e%d7%98%d7%a2%d7%9f-%d7%9e%d7%a7%d7%99%d7%98%d7%94-18v/">מטען מקיטה MAKITA DC18RC 18V &#8211; מטען מהיר למגוון סוללות ליתיום</a></h2>
+			<p class="w-post-elm product_field price usg_product_field_1"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#8362;</span>289.00</bdi></span></del> <ins aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#8362;</span>254.32</bdi></span></ins></p>
+		</div>
+	</article>
+
+	<article class="w-grid-item size_1x1 post-5102 product type-product status-publish has-post-thumbnail product_cat-2397 instock shipping-taxable purchasable product-type-simple" data-id="5102">
+		<div class="w-grid-item-inner">
+			<h2 class="w-post-elm post_title usg_post_title_1 align_center woocommerce-loop-product__title color_link_inherit"><a href="https://www.sinaistore.com/product/%d7%9e%d7%a4%d7%95%d7%97-%d7%9e%d7%a7%d7%99%d7%98%d7%94-18v-2/">מפוח מקיטה 18V &#8211; מפוח/ שואב נטען דגם DUB185Z (גוף בלבד)</a></h2>
+			<p class="w-post-elm product_field price usg_product_field_1"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#8362;</span>449.00</bdi></span></p>
+		</div>
+	</article>
+
+	<article class="w-grid-item size_1x1 post-6210 product type-product status-publish has-post-thumbnail product_cat-2397 instock shipping-taxable purchasable product-type-simple" data-id="6210">
+		<div class="w-grid-item-inner">
+			<h2 class="w-post-elm post_title usg_post_title_1 align_center woocommerce-loop-product__title color_link_inherit"><a href="https://www.sinaistore.com/product/%d7%9e%d7%a7%d7%93%d7%97%d7%99-sds-%d7%9e%d7%a7%d7%99%d7%98%d7%94-10/">מקדח לפטישון SDS מקיטה &#8211; עובי 4 מ&#8221;מ אורך 110 מ&#8221;מ</a></h2>
+			<p class="w-post-elm product_field price usg_product_field_1"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#8362;</span>12.00</bdi></span></p>
+		</div>
+	</article>
+</div>
+<nav class="woocommerce-pagination">
+	<span aria-current="page" class="page-numbers current">1</span>
+	<a class="page-numbers" href="https://www.sinaistore.com/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%99%d7%9d/page/2/">2</a>
+	<a class="next page-numbers" href="https://www.sinaistore.com/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%99%d7%9d/page/2/"><span>לשלב הבא</span></a>
+</nav>
+</body>
+</html>

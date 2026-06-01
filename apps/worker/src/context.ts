@@ -75,6 +75,27 @@ const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, strin
       "/products.json?limit=250": "products.json",
     },
   },
+  vaknin: {
+    dir: "packages/scraper-adapters/src/woocommerce/__fixtures__",
+    map: {
+      "/shop/": "vaknin-listing.html",
+      "/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94/":
+        "vaknin-listing.html",
+    },
+  },
+  bniyah: {
+    dir: "packages/scraper-adapters/src/woocommerce/__fixtures__",
+    map: {
+      "/shop/": "bniyah-listing.html",
+    },
+  },
+  sinai: {
+    dir: "packages/scraper-adapters/src/woocommerce/__fixtures__",
+    map: {
+      "/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%99%d7%9d/":
+        "sinai-listing.html",
+    },
+  },
 };
 
 function repoRoot(): string {
