@@ -19,11 +19,14 @@ packages/
   export/           ייצוא Excel (RTL) + CSV (BOM)
   scraper-core/     framework לסריקה: registry, rate-limit, robots, cache, runner,
                     ושכבת transport ניתנת להחלפה (HTTP / דפדפן / API חיצוני)
-  scraper-adapters/ אדפטר לכל ספק (ACE, טמבור) + fixtures
+  scraper-adapters/ אדפטר לכל ספק/פלטפורמה + fixtures:
+                    ACE (Magento), Home Center + Home Rey Binyan (Shopify),
+                    WooCommerce (Vaknin/Bniyah/Sinai), Konimbo (D-House/Netanel),
+                    טמבור (ללא מחירים מקוונים — offline בלבד)
   scraper-browser/  transport מבוסס Playwright (Chromium אמיתי) לאתרים עם אנטי-בוט
 apps/
-  web/              Next.js 15 — אשף 4 שלבים (RTL עברית) + API
-  worker/           job לרענון קטלוג (runner + adapter); מצב fixtures/live
+  web/              Next.js 15 — אשף 4 שלבים (RTL עברית) + API (כולל /api/scan)
+  worker/           רענון קטלוג (runner + adapter) + scan-daemon לסריקה לפי דרישה
 ```
 
 **זרימת המשתמש:** הזנת חומרים → סקירת התאמות (עריכה + למידת תיקונים) → הגדרת
@@ -48,13 +51,26 @@ pnpm --filter @quatecalc/db generate
 pnpm --filter @quatecalc/db migrate     # מיגרציות + pg_trgm + GIN index
 pnpm seed                                # קטלוג חומרי בנייה לדוגמה (אזור מרכז)
 
-# 4. רענון קטלוג (אוטומציית המחירים)
+# 4. (אופציונלי) רענון קטלוג מלא של ספק — pre-scrape ל-`current`
 pnpm --filter @quatecalc/worker refresh -- --fixtures --region center   # offline
-# pnpm --filter @quatecalc/worker refresh -- --live --region center      # אתר אמיתי
+# pnpm --filter @quatecalc/worker refresh -- --live --supplier homecenter --region center
 
-# 5. אפליקציית הווב
+# 5. דמון הסריקה לפי דרישה (חובה לאשף — האשף סורק חי את מה שהמשתמש מזין)
+pnpm --filter @quatecalc/worker scan-daemon
+# SCAN_BROWSER=false pnpm --filter @quatecalc/worker scan-daemon   # HTTP בלבד (בלי Chromium)
+
+# 6. אפליקציית הווב
 pnpm --filter @quatecalc/web dev         # http://localhost:3000
 ```
+
+### סריקה לפי דרישה (on-demand) — זרימת האשף
+
+האשף לא מסתמך על קטלוג שנסרק מראש: כשהמשתמש שולח שורות חומרים, הווב יוצר
+**ScanJob** (`POST /api/scan`), דמון ה-`scan-daemon` תופס אותו מתור ה-Postgres
+(`FOR UPDATE SKIP LOCKED`), סורק **חי** את הספקים שמממשים `searchProducts`, שומר
+שורות `scanned` ארעיות (TTL, נמחקות אוטומטית), מתאים מולן, וכותב את התוצאה. הווב
+מבצע polling (`GET /api/scan/:id`) ומציג התקדמות לכל ספק עד לתוצאה. כך אין צורך
+לאחסן קטלוגים שלמים — סורקים רק את מה שהצעת מחיר דורשת.
 
 ## אימות (tests)
 
@@ -71,8 +87,11 @@ pnpm -r test          # unit + integration
 - **חוקיות סריקה:** ה-runner מכבד `robots.txt`, מגביל קצב, ומזדהה ב-User-Agent.
   סריקת ספק חדש דורשת בדיקת תנאי שימוש. ה-adapter pattern מאפשר החלפת ספק בקלות.
 - **מע"מ:** ברירת מחדל 18% (ישראל, 2026), ניתן לשינוי לכל הצעה.
-- **תחום:** בנייה/שיפוצים. ספקים: **ACE** ו-**טמבור** (Tambour, WooCommerce).
-  הרחבה לספק נוסף = `adapter` חדש בלבד (selectors + parse + fixtures + tests).
+- **תחום:** בנייה/שיפוצים. ספקים חיים (live-proven): **ACE**, **Home Center**,
+  **Home Rey Binyan**, **Vaknin**, **Bniyah**, **D-House**, **Netanel**
+  (~1,800 מוצרים מתומחרים). **Sinai** ממומש אך חסום אנטי-בוט (offline-proven);
+  **טמבור** ללא מחירים מקוונים. הרחבה לספק נוסף = `adapter` חדש בלבד
+  (selectors + parse + fixtures + tests), או factory קיים (WooCommerce/Konimbo).
 ## סריקה חיה (live) — פתרון בעיית האנטי-בוט
 
 ל-`ScraperAdapter` לא אכפת **איך** מביאים את ה-HTML — הוא קורא ל-`ctx.fetchText`.
