@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "refresh": "tsx src/refresh.ts",
+    "scan-daemon": "tsx src/scanDaemon.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "echo \"(lint) worker\""
@@ -12,6 +13,7 @@
   "dependencies": {
     "@quatecalc/contracts": "workspace:*",
     "@quatecalc/db": "workspace:*",
+    "@quatecalc/matching": "workspace:*",
     "@quatecalc/scraper-adapters": "workspace:*",
     "@quatecalc/scraper-browser": "workspace:*",
     "@quatecalc/scraper-core": "workspace:*"

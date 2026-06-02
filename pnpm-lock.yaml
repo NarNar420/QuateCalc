@@ -78,6 +78,9 @@ importers:
       '@quatecalc/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@quatecalc/matching':
+        specifier: workspace:*
+        version: link:../../packages/matching
       '@quatecalc/scraper-adapters':
         specifier: workspace:*
         version: link:../../packages/scraper-adapters
