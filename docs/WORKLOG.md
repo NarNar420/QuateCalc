@@ -177,3 +177,18 @@ Newest entry at the bottom of each wave. Test counts are per-package vitest runs
 - **Recon (Shopify shape):** the predictive endpoint `/search/suggest.json` is **locale-gated on this store** — returns HTTP **417 "Unsupported buyer locale"** regardless of params/cookies/Accept-Language. Reconciled `homecenter.searchProducts` to search the **proven `/products.json` feed** and filter client-side by title token(s) (reusing `parseShopifyProducts`); `parseShopifySearch(json, ctx, query)` now filters that feed. Fixture + parser tests updated to the products.json shape (3 priced + 1 price-less; query "צבע"). NB: "מלט" isn't in the 250-product feed page, so the proof used "צבע" (paint), which is. Broader coverage (full catalog / true server-side search) = future work.
 - **Commit:** `5eb9a56` (harness + reconciliation); rework + lockfile-free fix follow-up.
 - **Status:** ✅ done (engine live-proven). Async scan jobs + web UX = sub-project 2.
+
+---
+
+## Sub-project 2 — On-demand async scan jobs + web UX
+
+### [2026-06-02] Async ScanJob queue + worker scan-daemon + wizard on-demand scan  (agent: claude-code/opus)
+- **Task:** the web wizard scans live suppliers on demand (async) and matches against ephemeral `scanned` rows, via a Postgres-queued ScanJob consumed by a worker daemon (no Redis — the table is the queue).
+- **Paths:** `packages/db` (ScanJob model + migration + repo), `packages/contracts` (scan schemas), `apps/worker` (`runScanJob` orchestration + `scanDaemon` + `@quatecalc/matching` dep), `apps/web` (`/api/scan` routes + InputStep poll UI).
+- **Public API:** ScanJob repo (`createScanJob`/`getScanJob`/`claimNextScanJob` [FOR UPDATE SKIP LOCKED]/`updateScanJobProgress`/`completeScanJob`/`failScanJob`/`sweepStaleScanJobs`); contracts `ScanJobView`/`ScanProgress`/`ScanJobStatus`; `POST /api/scan` (202 + jobId), `GET /api/scan/:id`; worker `scan-daemon` script + dep-injected `runScanJob(jobId, deps)`.
+- **Tests:** scanJobs repo integration 2, runScanJob orchestration 2 (offline fakes; supplier-error isolation), + full suites; `pnpm -r typecheck` clean, `pnpm -r test` green.
+- **Verified (LIVE, local):** started `scan-daemon` (SCAN_BROWSER=false → HTTP-only), enqueued a job (region center, line "צבע") → daemon claimed it, progress streamed `{ace, homecenter}`, scanned Home Center over HTTP, matched → **"כסא קלאב 2 צבע כחול" @ ₪49.9** (`needs_review`), status `complete`. ACE degraded cleanly (Knockout needs a browser; HTTP yielded 0, marked `done`). Scanned rows + job pruned after.
+- **Lockfile:** added `apps/worker → @quatecalc/matching` (the daemon runs `matchLines`); reconciled via one maintainer `pnpm install`.
+- **Notes / future work:** ACE on-demand search needs the daemon launched with the browser transport (`SCAN_BROWSER` default true + Playwright binary). New suppliers (homreybinyan/woo/konimbo, on `feat/more-suppliers`) gain on-demand search when that branch merges + they implement `searchProducts`. Scanned-row match is region-scoped, not job-scoped (fine for single-user; tag by jobId if concurrent same-region scans matter).
+- **Commits:** `2e0c22a` (model) · `7acbd8a` (repo) · `fbac916` (contracts) · `dd3f040` (api) · `334b946` (orchestration) · `10382bc` (web UI) · `a3dfc25` (daemon).
+- **Status:** ✅ done — full on-demand async scan live-proven end-to-end.
