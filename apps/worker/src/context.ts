@@ -69,6 +69,49 @@ const FIXTURE_SUPPLIERS: Record<string, { dir: string; map: Record<string, strin
       "/products.json?limit=250": "products.json",
     },
   },
+  homreybinyan: {
+    dir: "packages/scraper-adapters/src/homreybinyan/__fixtures__",
+    map: {
+      "/products.json?limit=250": "products.json",
+    },
+  },
+  vaknin: {
+    dir: "packages/scraper-adapters/src/woocommerce/__fixtures__",
+    map: {
+      "/shop/": "vaknin-listing.html",
+      "/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94/":
+        "vaknin-listing.html",
+    },
+  },
+  bniyah: {
+    dir: "packages/scraper-adapters/src/woocommerce/__fixtures__",
+    map: {
+      "/shop/": "bniyah-listing.html",
+    },
+  },
+  sinai: {
+    dir: "packages/scraper-adapters/src/woocommerce/__fixtures__",
+    map: {
+      "/product-category/%d7%9b%d7%9c%d7%99-%d7%a2%d7%91%d7%95%d7%93%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%99%d7%9d/":
+        "sinai-listing.html",
+    },
+  },
+  dhouse: {
+    dir: "packages/scraper-adapters/src/konimbo/__fixtures__",
+    map: {
+      "/349794-%D7%9B%D7%9C%D7%99-%D7%A2%D7%91%D7%95%D7%93%D7%94": "dhouse-listing.html",
+      "/420409-%D7%97%D7%A9%D7%9E%D7%9C": "dhouse-listing.html",
+    },
+  },
+  netanel: {
+    dir: "packages/scraper-adapters/src/konimbo/__fixtures__",
+    map: {
+      "/349438-%D7%A6%D7%91%D7%A2": "netanel-listing.html",
+      "/349845-%D7%9B%D7%9C%D7%99%D7%9D-%D7%97%D7%A8%D7%A9%D7%9E%D7%9C%D7%99%D7%99%D7%9D":
+        "netanel-listing.html",
+      "/422654-%D7%9B%D7%9C%D7%99-%D7%A2%D7%91%D7%95%D7%93%D7%94": "netanel-listing.html",
+    },
+  },
 };
 
 function repoRoot(): string {
