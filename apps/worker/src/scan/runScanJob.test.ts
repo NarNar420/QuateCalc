@@ -57,7 +57,7 @@ describe("runScanJob", () => {
     expect(deps.insertScannedProducts).toHaveBeenCalled();
     expect(deps.matchLines).toHaveBeenCalledWith(
       [{ id: "l1", rawText: "מלט", quantity: 1 }],
-      expect.objectContaining({ region: "center", statuses: ["scanned"] }),
+      expect.objectContaining({ region: "center", statuses: ["current", "scanned"] }),
     );
     expect(deps.complete).toHaveBeenCalledWith("j1", expect.any(Array));
   });

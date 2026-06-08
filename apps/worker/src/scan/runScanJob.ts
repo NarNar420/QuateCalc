@@ -5,7 +5,7 @@ import type {
   ScraperAdapter,
   ScraperContext,
 } from "@quatecalc/contracts";
-import type { StagedProductInput } from "@quatecalc/db";
+import type { CatalogStatus, StagedProductInput } from "@quatecalc/db";
 import type { RunSearchParams, SearchResult } from "@quatecalc/scraper-core";
 
 export interface ScanJobRecord {
@@ -14,6 +14,15 @@ export interface ScanJobRecord {
   lines: MaterialLine[];
 }
 
+/**
+ * Statuses the match runs over: the maintained `current` catalog (pre-scraped
+ * supplier products + seed) AND the fresh ephemeral `scanned` rows from this
+ * job. Hybrid: on-demand search AUGMENTS the catalog — a term not freshly
+ * scanned still matches the maintained catalog, and a fresh scan adds coverage
+ * the catalog lacks.
+ */
+const MATCH_STATUSES: CatalogStatus[] = ["current", "scanned"];
+
 export interface ScanJobDeps {
   getJob: (id: string) => Promise<ScanJobRecord | null>;
   adapters: ScraperAdapter[];
@@ -21,7 +30,7 @@ export interface ScanJobDeps {
   buildContext: (region: Region) => ScraperContext;
   runSearch: (p: RunSearchParams) => Promise<SearchResult>;
   insertScannedProducts: (rows: StagedProductInput[], expiresAt: Date) => Promise<number>;
-  matchLines: (lines: MaterialLine[], opts: { region: Region; statuses: ["scanned"] }) => Promise<MatchedLineItem[]>;
+  matchLines: (lines: MaterialLine[], opts: { region: Region; statuses: CatalogStatus[] }) => Promise<MatchedLineItem[]>;
   updateProgress: (id: string, progress: { perSupplier: Record<string, string> }) => Promise<void>;
   complete: (id: string, items: MatchedLineItem[]) => Promise<void>;
   fail: (id: string, error: string) => Promise<void>;
@@ -84,7 +93,7 @@ export async function runScanJob(jobId: string, deps: ScanJobDeps): Promise<void
   }
 
   try {
-    const items = await deps.matchLines(job.lines, { region: job.region, statuses: ["scanned"] });
+    const items = await deps.matchLines(job.lines, { region: job.region, statuses: MATCH_STATUSES });
     await deps.complete(jobId, items);
   } catch (err) {
     await deps.fail(jobId, `match failed: ${String(err)}`);
